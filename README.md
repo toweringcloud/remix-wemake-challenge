@@ -1,2 +1,2 @@
-# remix-wemake-clone
-react-router-v7 (remix) based ai community platform including authentication, payments, seo, deployment
+# remix-wemake-challenge
+react-router v7 framework (remix) based ai community platform using openai, drizzle, postgresql
