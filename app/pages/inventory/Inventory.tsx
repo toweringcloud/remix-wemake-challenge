@@ -1,0 +1,256 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useRoleStore } from "~/stores/role.store";
+import { Save, X } from "lucide-react";
+import { inventoryData } from "~/data/inventory.data";
+
+export default function InventoryPage() {
+  const navigate = useNavigate();
+  const { role } = useRoleStore();
+
+  // ✅ useState의 초기값으로 import한 inventoryData를 사용합니다.
+  const [items, setItems] = useState(inventoryData);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // ✅ 새 품목 추가 모드를 관리하는 상태
+  const [isAdding, setIsAdding] = useState(false);
+  // ✅ 새로 추가될 품목의 데이터를 임시 저장하는 상태
+  const [newItem, setNewItem] = useState({ name: "", quantity: 0, unit: "" });
+
+  // ... 권한 확인 useEffect ...
+
+  // '새 품목 추가' 버튼 핸들러
+  const handleAddNewItem = () => {
+    setIsAdding(true); // 추가 모드 활성화
+  };
+
+  // 새 품목 정보 입력 핸들러
+  const handleNewItemChange = (
+    field: keyof typeof newItem,
+    value: string | number
+  ) => {
+    setNewItem((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // 새 품목 저장 핸들러
+  const handleSaveNewItem = () => {
+    // 간단한 유효성 검사
+    if (!newItem.name || !newItem.unit) {
+      alert("품목명과 단위를 모두 입력해주세요.");
+      return;
+    }
+    // 새 아이템 객체 생성 (실제 앱에서는 id를 서버에서 받아옴)
+    const newRecord = { ...newItem, id: Date.now() };
+    setItems([newRecord, ...items]); // 테이블 상단에 새 품목 추가
+
+    // 상태 초기화
+    setIsAdding(false);
+    setNewItem({ name: "", quantity: 0, unit: "" });
+  };
+
+  // 새 품목 추가 취소 핸들러
+  const handleCancelAddItem = () => {
+    setIsAdding(false);
+    setNewItem({ name: "", quantity: 0, unit: "" });
+  };
+
+  // 인라인 폼에서 수량을 조절하는 함수
+  const handleQuantityChange = (id: number, amount: number) => {
+    setItems(
+      items.map((item) =>
+        item.id === id
+          ? { ...item, quantity: Math.max(0, item.quantity + amount) }
+          : item
+      )
+    );
+  };
+
+  // '저장' 버튼 클릭 시 (실제로는 여기서 API 호출)
+  const handleSave = (id: number) => {
+    console.log(
+      "Saving:",
+      items.find((item) => item.id === id)
+    );
+    setEditingId(null); // 수정 모드 종료
+  };
+
+  // '취소' 버튼 클릭 시
+  const handleCancel = () => {
+    setItems(inventoryData); // 변경사항을 원래 데이터로 되돌림 (임시)
+    setEditingId(null);
+  };
+
+  // ✅ 권한 확인 로직
+  useEffect(() => {
+    if (role !== "manager") {
+      navigate("/dashboard"); // 대시보드 홈으로 리다이렉트
+    }
+  }, [role, navigate]);
+
+  // ✅ 매니저가 아닐 경우, 리다이렉트 되기 전까지 로딩 또는 null을 반환
+  if (role !== "manager") {
+    return null;
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">재고 관리</h1>
+        {/* ✅ isAdding 상태가 아닐 때만 '새 품목 추가' 버튼이 보이도록 설정 */}
+        {!isAdding && (
+          <button
+            onClick={handleAddNewItem}
+            className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700"
+          >
+            + 새 품목 추가
+          </button>
+        )}
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow">
+        <table className="w-full">
+          <thead className="border-b-2">
+            <tr className="text-left text-gray-600">
+              <th className="p-3">품목명</th>
+              <th className="p-3">현재 수량</th>
+              <th className="p-3 text-center">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* ✅ isAdding 상태일 때, 테이블 최상단에 편집 폼을 렌더링 */}
+            {isAdding && (
+              <tr className="bg-blue-50">
+                <td className="p-2">
+                  <input
+                    type="text"
+                    placeholder="품목명"
+                    value={newItem.name}
+                    onChange={(e) =>
+                      handleNewItemChange("name", e.target.value)
+                    }
+                    className="w-full p-2 border rounded"
+                  />
+                </td>
+                <td className="p-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="수량"
+                      value={newItem.quantity}
+                      onChange={(e) =>
+                        handleNewItemChange(
+                          "quantity",
+                          parseInt(e.target.value, 10)
+                        )
+                      }
+                      className="w-20 p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="단위 (예: kg, 개)"
+                      value={newItem.unit}
+                      onChange={(e) =>
+                        handleNewItemChange("unit", e.target.value)
+                      }
+                      className="w-full p-2 border rounded"
+                    />
+                  </div>
+                </td>
+                <td className="p-2 text-center">
+                  <div className="flex justify-center space-x-2">
+                    <button
+                      title="수정"
+                      onClick={handleSaveNewItem}
+                      className="text-blue-600 hover:text-blue-800 p-1"
+                    >
+                      <Save size={20} />
+                    </button>
+                    <button
+                      title="삭제"
+                      onClick={handleCancelAddItem}
+                      className="text-red-500 hover:text-red-700 p-1"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
+            {items.map((item) => (
+              <tr key={item.id} className="border-b hover:bg-gray-50">
+                <td className="p-3 font-semibold">{item.name}</td>
+                {/* 수정 모드일 때와 아닐 때를 구분하여 표시 */}
+                {editingId === item.id ? (
+                  // 수정 모드: 수량 조절 버튼 표시
+                  <td className="p-3">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => handleQuantityChange(item.id, -1)}
+                        className="font-bold bg-gray-200 rounded-full w-6 h-6"
+                      >
+                        -
+                      </button>
+                      <span>
+                        {item.quantity} {item.unit}
+                      </span>
+                      <button
+                        onClick={() => handleQuantityChange(item.id, 1)}
+                        className="font-bold bg-gray-200 rounded-full w-6 h-6"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </td>
+                ) : (
+                  // 일반 모드: 현재 수량 표시
+                  <td className="p-3">
+                    {item.quantity} {item.unit}
+                  </td>
+                )}
+
+                <td className="p-3 text-center">
+                  {editingId === item.id ? (
+                    // 수정 모드: 저장/취소 버튼
+                    <div className="space-x-2">
+                      <button
+                        title="저장"
+                        onClick={() => handleSave(item.id)}
+                        className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                      >
+                        <Save size={20} />
+                      </button>
+                      <button
+                        title="취소"
+                        onClick={handleCancel}
+                        className="text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    // 일반 모드: 수정/삭제 버튼
+                    <div className="space-x-2">
+                      <button
+                        title="수정"
+                        onClick={() => setEditingId(item.id)}
+                        className="text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+                      >
+                        <Save size={20} />
+                      </button>
+                      <button
+                        title="삭제"
+                        className="text-sm bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
