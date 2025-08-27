@@ -7,7 +7,7 @@ export default function RecipeListPage() {
   const recipes = recipesData;
 
   return (
-    <div>
+    <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">
           {role === "staff" ? "레시피" : "레시피 관리"}

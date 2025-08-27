@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-// 스토어의 상태(state)와 액션(actions)에 대한 타입 정의
+// 권한 스토어의 상태와 액션에 대한 타입 정의
 interface RoleState {
   role: "manager" | "staff" | null;
   isLoggedIn: boolean;
@@ -8,7 +8,6 @@ interface RoleState {
   logout: () => void;
 }
 
-// Zustand 스토어 생성
 export const useRoleStore = create<RoleState>((set) => ({
   role: null,
   isLoggedIn: false,

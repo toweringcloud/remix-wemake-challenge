@@ -96,7 +96,7 @@ export default function RecipeFormPage() {
   }
 
   return (
-    <div>
+    <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">
         {isEditMode ? "레시피 수정" : "새 레시피 등록"}
       </h1>

@@ -8,20 +8,15 @@ export default function InventoryPage() {
   const navigate = useNavigate();
   const { role } = useRoleStore();
 
-  // ✅ useState의 초기값으로 import한 inventoryData를 사용합니다.
   const [items, setItems] = useState(inventoryData);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // ✅ 새 품목 추가 모드를 관리하는 상태
   const [isAdding, setIsAdding] = useState(false);
-  // ✅ 새로 추가될 품목의 데이터를 임시 저장하는 상태
   const [newItem, setNewItem] = useState({ name: "", quantity: 0, unit: "" });
-
-  // ... 권한 확인 useEffect ...
 
   // '새 품목 추가' 버튼 핸들러
   const handleAddNewItem = () => {
-    setIsAdding(true); // 추가 모드 활성화
+    setIsAdding(true);
   };
 
   // 새 품목 정보 입력 핸들러
@@ -34,16 +29,13 @@ export default function InventoryPage() {
 
   // 새 품목 저장 핸들러
   const handleSaveNewItem = () => {
-    // 간단한 유효성 검사
     if (!newItem.name || !newItem.unit) {
       alert("품목명과 단위를 모두 입력해주세요.");
       return;
     }
     // 새 아이템 객체 생성 (실제 앱에서는 id를 서버에서 받아옴)
     const newRecord = { ...newItem, id: Date.now() };
-    setItems([newRecord, ...items]); // 테이블 상단에 새 품목 추가
-
-    // 상태 초기화
+    setItems([newRecord, ...items]);
     setIsAdding(false);
     setNewItem({ name: "", quantity: 0, unit: "" });
   };
@@ -83,7 +75,7 @@ export default function InventoryPage() {
   // ✅ 권한 확인 로직
   useEffect(() => {
     if (role !== "manager") {
-      navigate("/dashboard"); // 대시보드 홈으로 리다이렉트
+      navigate("/dashboard");
     }
   }, [role, navigate]);
 
@@ -93,7 +85,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <div>
+    <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">재고 관리</h1>
         {/* ✅ isAdding 상태가 아닐 때만 '새 품목 추가' 버튼이 보이도록 설정 */}
@@ -117,7 +109,6 @@ export default function InventoryPage() {
             </tr>
           </thead>
           <tbody>
-            {/* ✅ isAdding 상태일 때, 테이블 최상단에 편집 폼을 렌더링 */}
             {isAdding && (
               <tr className="bg-blue-50">
                 <td className="p-2">
@@ -179,7 +170,6 @@ export default function InventoryPage() {
             {items.map((item) => (
               <tr key={item.id} className="border-b hover:bg-gray-50">
                 <td className="p-3 font-semibold">{item.name}</td>
-                {/* 수정 모드일 때와 아닐 때를 구분하여 표시 */}
                 {editingId === item.id ? (
                   // 수정 모드: 수량 조절 버튼 표시
                   <td className="p-3">

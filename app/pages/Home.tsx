@@ -16,20 +16,22 @@ export default function HomePage() {
   };
 
   return (
-    <div className="text-center py-24">
-      <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
-        시니어클럽 카페 관리를 시작해보세요!
-      </h1>
-      <p className="mt-4 text-lg text-gray-600">
-        간편하게 레시피를 만들고, 재료 재고를 추적하여 똑똑한 카페 운영을
-        시작하세요.
-      </p>
-      <button
-        onClick={handleStart}
-        className="mt-8 inline-block bg-blue-600 text-white font-bold text-lg py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        시작하기
-      </button>
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center py-24">
+        <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
+          카페리움에 오신 걸 환영합니다!
+        </h1>
+        <p className="mt-4 text-lg text-gray-600">
+          간편하게 레시피를 만들고, 재료 재고를 추적하여 똑똑한 카페 운영을
+          시작하세요.
+        </p>
+        <button
+          onClick={handleStart}
+          className="mt-8 inline-flex items-center justify-center bg-blue-600 text-white font-bold text-lg py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          시작하기
+        </button>
+      </div>
     </div>
   );
 }
