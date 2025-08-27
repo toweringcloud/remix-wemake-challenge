@@ -24,7 +24,7 @@ export default function LoginPage() {
       login("staff");
       navigate("/dashboard");
     } else {
-      setError("비밀번호가 올바르지 않습니다.");
+      setError("입장 코드가 올바르지 않습니다.");
     }
   };
 
@@ -37,7 +37,7 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-amber-800 mb-2">
-              역할 선택
+              역할을 선택해 주세요.
             </label>
             <div className="flex items-center justify-around bg-amber-50 rounded-lg p-1.5 shadow-inner">
               <label
@@ -86,7 +86,7 @@ export default function LoginPage() {
               htmlFor="password-input"
               className="block text-sm font-medium text-amber-800"
             >
-              비밀번호
+              입장코드를 입력해 주세요.
             </label>
             <input
               id="password-input"
@@ -95,7 +95,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 mt-1 border border-amber-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50 text-amber-800 placeholder-amber-400" // 입력창 스타일 변경
               required
-              placeholder="비밀번호 입력"
+              placeholder="cafe로 시작하는 입장코드 입력"
             />
           </div>
           {error && <p className="text-sm text-red-600 text-center">{error}</p>}
