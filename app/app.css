@@ -1,15 +1,104 @@
+/* Tailwind CSS v4의 핵심 지시어들을 가져옵니다. */
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
+/* ✅ @theme 지시어: v4에서 tailwind.config.js의 역할을 합니다.
+  모든 커스텀 스타일, 변수, 애니메이션 등을 여기에 등록합니다.
+*/
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --container-center: true;
+  --container-padding: 2rem;
+  --container-screens-sm: 640px;
+  --container-screens-md: 768px;
+  --container-screens-lg: 1024px;
+  --container-screens-xl: 1280px;
+  --container-screens-2xl: 1400px;
+  --font-sans: "Inter", "ui-sans-serif", "system-ui", "sans-serif";
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-ring: hsl(var(--ring)); /* ✅ ring 색상 등록 */
+  --color-magic-border: hsl(var(--magic-border));
+  --color-magic-color: hsl(var(--magic-color));
 }
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
+@theme inline {
+  --animation-shine: shine 8s ease-in-out infinite;
+  @keyframes shine {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+  /* Animated Shiny Text */
+  --animate-shiny-text: shiny-text 8s infinite;
+  @keyframes shiny-text {
+    0%,
+    90%,
+    100% {
+      background-position: calc(-100% - var(--shiny-width)) 0;
+    }
+    30%,
+    60% {
+      background-position: calc(100% + var(--shiny-width)) 0;
+    }
+  }
+
+  /* Pulsating Button */
+  --animate-pulse: pulse var(--duration) ease-out infinite;
+  @keyframes pulse {
+    0%,
+    100% {
+      boxshadow: 0 0 0 0 var(--pulse-color);
+    }
+    50% {
+      boxshadow: 0 0 0 8px var(--pulse-color);
+    }
+  }
+}
+
+/* ✅ @layer 지시어와 CSS 변수 정의
+  :root에 실제 CSS 변수 값을 정의하고, @layer base에서 기본 스타일을 적용합니다.
+*/
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%; /* ✅ ring 변수 값 정의 */
+    --magic-border: 255 255 255;
+    --magic-color: 0 0 0;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --ring: 217.2 32.6% 17.5%; /* ✅ ring 변수 값 정의 (dark) */
+  }
+
+  /* ✅ 오류가 발생한 부분 수정
+    v3의 @apply border-border; 대신, v4에서는 theme() 함수를 사용합니다.
+  */
+  * {
+    border-color: theme(--color-border);
+  }
+
+  body {
+    background-color: theme(--color-background);
+    color: theme(--color-foreground);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }

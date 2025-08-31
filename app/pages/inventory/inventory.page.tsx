@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRoleStore } from "~/stores/role.store";
-import { Save, X } from "lucide-react";
+import { Save, Trash2, X } from "lucide-react";
 import { inventoryData } from "~/data/inventory.data";
+import type { Route } from "./+types/inventory.page";
+
+export const meta: Route.MetaFunction = () => [
+  { title: "Inventory | Caferium" },
+  {
+    name: "description",
+    content: "manage the inventory items such as coffee beans, milk, syrup",
+  },
+];
 
 export default function InventoryPage() {
   const navigate = useNavigate();
@@ -104,7 +113,7 @@ export default function InventoryPage() {
           <thead className="border-b-2">
             <tr className="text-left text-gray-600">
               <th className="p-3">품목명</th>
-              <th className="p-3">현재 수량</th>
+              <th className="p-3">수량</th>
               <th className="p-3 text-center">관리</th>
             </tr>
           </thead>
@@ -161,7 +170,7 @@ export default function InventoryPage() {
                       onClick={handleCancelAddItem}
                       className="text-red-500 hover:text-red-700 p-1"
                     >
-                      <X size={20} />
+                      <Trash2 size={20} />
                     </button>
                   </div>
                 </td>
@@ -201,37 +210,37 @@ export default function InventoryPage() {
                 <td className="p-3 text-center">
                   {editingId === item.id ? (
                     // 수정 모드: 저장/취소 버튼
-                    <div className="space-x-2">
+                    <div className="space-x-1 flex flex-row flex-wrap justify-center">
                       <button
                         title="저장"
                         onClick={() => handleSave(item.id)}
-                        className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                        className="text-sm bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
                       >
                         <Save size={20} />
                       </button>
                       <button
                         title="취소"
                         onClick={handleCancel}
-                        className="text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+                        className="text-sm bg-gray-200 p-2 rounded hover:bg-gray-300"
                       >
-                        <X size={20} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   ) : (
                     // 일반 모드: 수정/삭제 버튼
-                    <div className="space-x-2">
+                    <div className="space-x-1 flex flex-row justify-center">
                       <button
                         title="수정"
                         onClick={() => setEditingId(item.id)}
-                        className="text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+                        className="text-sm bg-gray-200 p-2 rounded hover:bg-gray-300"
                       >
                         <Save size={20} />
                       </button>
                       <button
                         title="삭제"
-                        className="text-sm bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200"
+                        className="text-sm bg-red-100 text-red-700 p-2 rounded hover:bg-red-200"
                       >
-                        <X size={20} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   )}

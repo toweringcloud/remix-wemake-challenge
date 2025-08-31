@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRoleStore } from "~/stores/role.store";
 import { Coffee, UserRound, Briefcase } from "lucide-react";
+import type { Route } from "./+types/login.page";
+
+export const meta: Route.MetaFunction = () => [
+  { title: "Login | Caferium" },
+  { name: "description", content: "sign-in with role and code" },
+];
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<"staff" | "manager">(
@@ -24,7 +30,7 @@ export default function LoginPage() {
       login("staff");
       navigate("/dashboard");
     } else {
-      setError("입장 코드가 올바르지 않습니다.");
+      setError("입장코드가 올바르지 않습니다.");
     }
   };
 

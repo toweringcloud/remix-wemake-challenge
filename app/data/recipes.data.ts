@@ -5,6 +5,7 @@ export interface Recipe {
   imageUrl: string;
   ingredients: { name: string; amount: string }[];
   steps: string[];
+  [key: string]: unknown;
 }
 
 export const recipesData: Recipe[] = [

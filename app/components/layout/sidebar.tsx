@@ -1,11 +1,19 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useRoleStore } from "~/stores/role.store";
 import { useMenuStore } from "~/stores/menu.store";
-import { BookMarked, Archive } from "lucide-react";
+import { BookMarked, Archive, LogOut } from "lucide-react";
 
 export default function Sidebar() {
-  const { role } = useRoleStore();
+  const { role, logout } = useRoleStore();
   const { isSidebarOpen, closeSidebar } = useMenuStore();
+  const navigate = useNavigate();
+
+  // ✅ 로그아웃 핸들러 함수
+  const handleLogout = () => {
+    closeSidebar(); // 메뉴를 먼저 닫고
+    logout(); // 로그아웃 처리 후
+    navigate("/login"); // 로그인 페이지로 이동
+  };
 
   const navLinkClass = `flex flex-col items-center justify-center gap-1 p-4 rounded-lg transition-colors duration-200`;
   const getActiveClass = (isActive: boolean) => {
@@ -70,6 +78,17 @@ export default function Sidebar() {
             </NavLink>
           )}
         </nav>
+
+        {/* ✅ 로그아웃 버튼 추가 */}
+        <div className="mt-auto p-4 border-t border-amber-100">
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center justify-center gap-1 w-full p-2 rounded-lg text-stone-500 hover:bg-stone-100"
+          >
+            <LogOut size={24} />
+            <span className="text-xs font-semibold">로그아웃</span>
+          </button>
+        </div>
       </aside>
     </>
   );

@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRoleStore } from "~/stores/role.store";
+import type { Route } from "./+types/recipe-form.page";
+import { Trash2 } from "lucide-react";
+import { recipesData } from "~/data/recipes.data";
+
+export const meta: Route.MetaFunction = () => {
+  const { recipeId } = useParams<{ recipeId: string }>();
+  const isEditMode = Boolean(recipeId);
+  return [
+    { title: `Recipe ${isEditMode ? "Modify" : "Add"} | Caferium` },
+    { name: "description", content: "add new recipe or modify one" },
+  ];
+};
 
 // 재료 항목에 대한 인터페이스 정의
 interface Ingredient {
@@ -12,14 +24,6 @@ export default function RecipeFormPage() {
   const navigate = useNavigate();
   const { role } = useRoleStore();
   const { recipeId } = useParams<{ recipeId: string }>();
-
-  // ✅ 권한 확인 로직
-  useEffect(() => {
-    if (role !== "manager") {
-      alert("접근 권한이 없습니다.");
-      navigate("/dashboard"); // 대시보드 홈으로 리다이렉트
-    }
-  }, [role, navigate]);
 
   // recipeId가 있으면 수정 모드, 없으면 생성 모드
   const isEditMode = Boolean(recipeId);
@@ -33,26 +37,24 @@ export default function RecipeFormPage() {
   const [steps, setSteps] = useState<string[]>([""]);
 
   useEffect(() => {
-    if (isEditMode) {
-      // API 호출로 기존 데이터를 가져온다고 가정
-      const fetchedData = {
-        name: "카페라떼",
-        description: "부드러운 우유와 에스프레소의 완벽한 조화",
-        ingredients: [
-          { name: "에스프레소", amount: "2샷" },
-          { name: "우유", amount: "200ml" },
-        ],
-        steps: [
-          "잔에 에스프레소 2샷을 추출합니다.",
-          "우유 200ml를 스팀합니다.",
-        ],
-      };
-      setName(fetchedData.name);
-      setDescription(fetchedData.description);
-      setIngredients(fetchedData.ingredients);
-      setSteps(fetchedData.steps);
+    if (role !== "manager") {
+      alert("접근 권한이 없습니다.");
+      navigate("/dashboard");
     }
-  }, [isEditMode, recipeId]);
+
+    // ✅ 수정 모드일 때, URL의 ID를 사용해 올바른 데이터를 불러옵니다.
+    if (isEditMode) {
+      const recipeToEdit = recipesData.find((r) => r.id === recipeId);
+
+      // ✅ 찾아온 데이터로 폼의 상태를 설정합니다.
+      if (recipeToEdit) {
+        setName(recipeToEdit.name);
+        setDescription(recipeToEdit.description);
+        setIngredients(recipeToEdit.ingredients);
+        setSteps(recipeToEdit.steps);
+      }
+    }
+  }, [isEditMode, recipeId, role, navigate]);
 
   // 재료 관련 핸들러 (매개변수 타입 지정)
   const handleIngredientChange = (
@@ -161,10 +163,11 @@ export default function RecipeFormPage() {
               />
               <button
                 type="button"
+                title="삭제"
                 onClick={() => removeIngredient(index)}
                 className="bg-red-500 text-white px-3 py-2 rounded"
               >
-                삭제
+                <Trash2 size={20} />
               </button>
             </div>
           ))}
@@ -192,10 +195,11 @@ export default function RecipeFormPage() {
               ></textarea>
               <button
                 type="button"
+                title="삭제"
                 onClick={() => removeStep(index)}
                 className="bg-red-500 text-white px-3 py-2 rounded"
               >
-                삭제
+                <Trash2 size={20} />
               </button>
             </div>
           ))}
