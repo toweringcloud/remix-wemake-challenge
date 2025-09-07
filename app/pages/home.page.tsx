@@ -11,13 +11,48 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import { useState } from "react";
 import { PulsatingButton } from "~/components/magicui/pulsating-button";
+// import { getCafeData } from "~/queries/cafe.queries";
+// import { DateTime } from "luxon";
+import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Home | Caferium" },
   { name: "description", content: "introduce about the cafe" },
 ];
 
-export default function HomePage() {
+export async function loader({ request }: Route.LoaderArgs) {
+  // const cafes = await getCafeData({
+  //   request,
+  //   startDate: DateTime.now().startOf("day"),
+  //   endDate: DateTime.now().endOf("day"),
+  //   limit: 10,
+  // });
+
+  const { supabase } = createClient(request);
+  const { data: cafes } = await supabase.from("cafes").select();
+  console.log("cafes", cafes);
+  // cafes [
+  //   {
+  //     id: 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0',
+  //     name: '어반 그라인드',
+  //     description: '도심 속의 현대적인 커피 공간',
+  //     logo_url: null,
+  //     headline: '최고급 원두로 내린 스페셜티 커피',
+  //     body: '매일 아침 직접 로스팅한 신선한 원두를 사용합니다.',
+  //     video_url: null,
+  //     photos_urls: null,
+  //     created_at: '2025-09-07T13:40:00.900276+00:00',
+  //     updated_at: '2025-09-07T13:40:00.900276+00:00'
+  //   }
+  // ]
+
+  if (cafes && cafes.length > 0) {
+    return cafes[0];
+  }
+  return null;
+}
+
+export default function HomePage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const { isLoggedIn } = useRoleStore();
 
@@ -70,16 +105,19 @@ export default function HomePage() {
 
       <div className="text-center">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
-          레시피와 재고를 한 곳에서 관리하세요!
+          {loaderData?.headline || "레시피와 재고를 한 곳에서 관리하세요!"}
         </h1>
         <p className="mt-4 text-md md:text-lg text-gray-600">
-          복잡한 메뉴 관리와 재고 계산은 이제 그만. 똑똑한 운영에만 집중하세요.
+          {loaderData?.body ||
+            "복잡한 메뉴 관리와 재고 계산은 이제 그만. 똑똑한 운영에만 집중하세요."}
         </p>
         <button
           onClick={handleStart}
           className="mt-8 inline-flex items-center justify-center bg-amber-600 text-white font-bold text-3xl py-3 px-8 rounded-lg hover:bg-amber-700 transition-transform hover:scale-105"
         >
-          <PulsatingButton>대시보드로 이동</PulsatingButton>
+          <PulsatingButton>
+            {loaderData?.name || "대시보드로 이동"}
+          </PulsatingButton>
         </button>
       </div>
     </div>
