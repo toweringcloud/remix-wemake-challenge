@@ -106,98 +106,125 @@ inserted_recipes AS (
   FROM inserted_menus AS m
   RETURNING id, name
 )
+UPDATE recipes SET description = '깊고 진한 에스프레소에 뜨거운 물을 더한 클래식 커피' WHERE name = '핫 아메리카노';
+UPDATE recipes SET description = '시원한 물과 얼음 위에 에스프레소를 부어 깔끔하게 즐기는 커피' WHERE name = '아이스 아메리카노';
+UPDATE recipes SET description = '달콤한 바닐라 향의 스팀 밀크에 에스프레소 샷과 카라멜 소스를 얹은 부드러운 커피' WHERE name = '핫 카라멜 마끼아또';
+UPDATE recipes SET description = '바닐라 시럽과 우유, 얼음 위에 에스프레소 샷과 카라멜 소스를 더한 시원하고 달콤한 커피' WHERE name = '아이스 카라멜 마끼아또';
+UPDATE recipes SET description = '에스프레소에 부드러운 스팀 밀크를 듬뿍 더해 고소하고 담백하게 즐기는 커피' WHERE name = '핫 카페라떼';
+UPDATE recipes SET description = '신선한 우유와 얼음, 에스프레소 샷이 어우러져 더욱 고소하고 시원한 커피' WHERE name = '아이스 카페라떼';
+UPDATE recipes SET description = '달콤한 바닐라 시럽과 에스프레소, 부드러운 스팀 밀크가 조화로운 인기 라떼' WHERE name = '핫 바닐라라떼';
+UPDATE recipes SET description = '바닐라 시럽의 달콤함과 에스프레소의 깊은 풍미를 시원하게 즐기는 라떼' WHERE name = '아이스 바닐라라떼';
+UPDATE recipes SET description = '진한 초콜릿과 부드러운 스팀 밀크가 만나 달콤하고 따뜻하게 몸을 녹여주는 음료' WHERE name = '핫 초코라떼';
+UPDATE recipes SET description = '진하고 달콤한 초콜릿을 신선한 우유와 얼음으로 시원하게 즐기는 음료' WHERE name = '아이스 초코라떼';
+UPDATE recipes SET description = '쌉쌀한 국내산 녹차와 부드러운 우유가 만나 건강하고 든든한 논커피 라떼' WHERE name = '핫 그린티라떼';
+UPDATE recipes SET description = '진한 녹차의 풍미를 신선한 우유와 얼음으로 더욱 시원하고 깔끔하게 즐기는 라떼' WHERE name = '아이스 그린티라떼';
+UPDATE recipes SET description = '달콤하고 구수한 국내산 고구마와 따뜻한 우유가 만나 든든한 한 끼 식사 대용 음료' WHERE name = '핫 고구마라떼';
+UPDATE recipes SET description = '알싸한 생강과 부드러운 우유가 만나 몸을 따뜻하게 데워주는 건강 라떼' WHERE name = '핫 생강라떼';
+UPDATE recipes SET description = '18가지 곡물로 만들어 고소하고 든든하며 시원하게 즐기는 한국식 건강 음료' WHERE name = '아이스 미숫가루라떼';
+UPDATE recipes SET description = '아름다운 꽃잎을 그대로 담아 눈과 입으로 즐기는 향긋한 수제 허브티' WHERE name = '핫 수제꽃차';
+UPDATE recipes SET description = '국내산 생강을 정성껏 달여 만들어 목을 편안하게 해주는 건강 전통차' WHERE name = '핫 생강차';
+UPDATE recipes SET description = '푹 고아낸 대추의 깊고 진한 단맛으로 몸의 기운을 북돋아 주는 전통차' WHERE name = '핫 대추차';
+UPDATE recipes SET description = '향긋한 유자의 상큼함과 달콤함으로 비타민을 보충하는 인기 과일차' WHERE name = '핫 유자차';
+UPDATE recipes SET description = '쌉쌀하고 상큼한 자몽 과육이 그대로 담겨 생기 넘치는 하루를 선사하는 과일차' WHERE name = '핫 자몽차';
+UPDATE recipes SET description = '상큼한 레몬의 신선함으로 기분까지 상쾌하게 만들어주는 비타민 과일차' WHERE name = '핫 레몬차';
+UPDATE recipes SET description = '매혹적인 붉은 수색과 새콤한 맛이 특징인 무카페인 허브티' WHERE name = '핫 히비스커스';
+UPDATE recipes SET description = '은은한 사과향과 함께 심신을 안정시켜 편안한 휴식을 선사하는 허브티' WHERE name = '핫 캐모마일';
+UPDATE recipes SET description = '입안 가득 퍼지는 상쾌한 민트향으로 기분을 전환시켜주는 허브티' WHERE name = '핫 페퍼민트';
+UPDATE recipes SET description = '베르가못 향이 매력적인 클래식 홍차로, 깊고 풍부한 맛을 자랑합니다' WHERE name = '핫 얼그레이';
+UPDATE recipes SET description = '엿기름으로 직접 담가 달콤하고 시원하며 밥알이 동동 떠있는 한국 전통 음료' WHERE name = '아이스 살얼음 동동식혜';
+
 -- 핫 아메리카노
 UPDATE recipes
-SET steps = ARRAY['뜨거운 잔을 준비합니다.', '에스프레소 2샷(30ml)을 추출합니다.', '추출된 샷에 뜨거운 물(200ml)을 붓습니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['뜨거운 잔을 준비합니다.', '에스프레소 2샷(30ml)을 추출합니다.', '추출된 샷에 뜨거운 물(200ml)을 붓습니다.']
 WHERE name = '핫 아메리카노';
 
 -- 아이스 아메리카노
 UPDATE recipes
-SET steps = ARRAY['얼음을 가득 채운 아이스 잔을 준비합니다.', '차가운 물(180ml)을 붓습니다.', '에스프레소 2샷(30ml)을 추출하여 물 위에 붓습니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['얼음을 가득 채운 아이스 잔을 준비합니다.', '차가운 물(180ml)을 붓습니다.', '에스프레소 2샷(30ml)을 추출하여 물 위에 붓습니다.']
 WHERE name = '아이스 아메리카노';
 
 -- 핫 카라멜 마끼아또
 UPDATE recipes
-SET steps = ARRAY['뜨거운 잔에 바닐라 시럽(2펌프)을 넣습니다.', '우유(220ml)를 곱게 스티밍하여 잔에 붓습니다.', '에스프레소 2샷(30ml)을 추출하여 우유 거품 위에 점을 찍듯이 붓습니다.', '카라멜 소스를 격자 모양으로 드리즐합니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['뜨거운 잔에 바닐라 시럽(2펌프)을 넣습니다.', '우유(220ml)를 곱게 스티밍하여 잔에 붓습니다.', '에스프레소 2샷(30ml)을 추출하여 우유 거품 위에 점을 찍듯이 붓습니다.', '카라멜 소스를 격자 모양으로 드리즐합니다.']
 WHERE name = '핫 카라멜 마끼아또';
 
 -- 아이스 카라멜 마끼아또
 UPDATE recipes
-SET steps = ARRAY['아이스 잔에 바닐라 시럽(2펌프)을 넣습니다.', '우유(200ml)를 붓고 얼음을 가득 채웁니다.', '에스프레소 2샷(30ml)을 추출하여 얼음 위에 부드럽게 붓습니다.', '카라멜 소스를 격자 모양으로 드리즐합니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['아이스 잔에 바닐라 시럽(2펌프)을 넣습니다.', '우유(200ml)를 붓고 얼음을 가득 채웁니다.', '에스프레소 2샷(30ml)을 추출하여 얼음 위에 부드럽게 붓습니다.', '카라멜 소스를 격자 모양으로 드리즐합니다.']
 WHERE name = '아이스 카라멜 마끼아또';
 
 -- 핫 카페라떼
 UPDATE recipes
-SET steps = ARRAY['뜨거운 잔을 준비합니다.', '잔에 에스프레소 2샷(30ml)을 추출합니다.', '우유(250ml)를 스팀 피처에 담아 벨벳 질감으로 스티밍합니다.', '샷 위에 스팀 우유를 부드럽게 부어 하트 모양을 만듭니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['뜨거운 잔을 준비합니다.', '잔에 에스프레소 2샷(30ml)을 추출합니다.', '우유(250ml)를 스팀 피처에 담아 벨벳 질감으로 스티밍합니다.', '샷 위에 스팀 우유를 부드럽게 부어 하트 모양을 만듭니다.']
 WHERE name = '핫 카페라떼';
 
 -- 아이스 카페라떼
 UPDATE recipes
-SET steps = ARRAY['얼음을 가득 채운 아이스 잔을 준비합니다.', '잔에 우유(200ml)를 먼저 붓습니다.', '에스프레소 2샷(30ml)을 추출하여 우유 위에 부드럽게 붓습니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['얼음을 가득 채운 아이스 잔을 준비합니다.', '잔에 우유(200ml)를 먼저 붓습니다.', '에스프레소 2샷(30ml)을 추출하여 우유 위에 부드럽게 붓습니다.']
 WHERE name = '아이스 카페라떼';
 
 -- 핫 바닐라라떼
 UPDATE recipes
-SET steps = ARRAY['뜨거운 잔에 바닐라 시럽(2펌프)을 넣습니다.', '에스프레소 2샷(30ml)을 추출하여 시럽과 잘 섞어줍니다.', '우유(220ml)를 곱게 스티밍하여 잔에 붓습니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['뜨거운 잔에 바닐라 시럽(2펌프)을 넣습니다.', '에스프레소 2샷(30ml)을 추출하여 시럽과 잘 섞어줍니다.', '우유(220ml)를 곱게 스티밍하여 잔에 붓습니다.']
 WHERE name = '핫 바닐라라떼';
 
 -- 아이스 바닐라라떼
 UPDATE recipes
-SET steps = ARRAY['아이스 잔에 바닐라 시럽(2펌프)과 에스프레소 2샷(30ml)을 넣고 섞어줍니다.', '우유(200ml)를 붓고 얼음을 가득 채웁니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['아이스 잔에 바닐라 시럽(2펌프)과 에스프레소 2샷(30ml)을 넣고 섞어줍니다.', '우유(200ml)를 붓고 얼음을 가득 채웁니다.']
 WHERE name = '아이스 바닐라라떼';
 
 -- 핫 초코라떼
 UPDATE recipes
-SET steps = ARRAY['뜨거운 잔에 초코 파우더(30g)를 넣습니다.', '뜨거운 물 또는 우유(30ml)를 약간 부어 잘 녹여 페이스트로 만듭니다.', '우유(220ml)를 부드럽게 스티밍합니다.', '초코 페이스트에 스팀 우유를 부으면서 잘 저어줍니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['뜨거운 잔에 초코 파우더(30g)를 넣습니다.', '뜨거운 물 또는 우유(30ml)를 약간 부어 잘 녹여 페이스트로 만듭니다.', '우유(220ml)를 부드럽게 스티밍합니다.', '초코 페이스트에 스팀 우유를 부으면서 잘 저어줍니다.']
 WHERE name = '핫 초코라떼';
 
 -- 아이스 초코라떼
 UPDATE recipes
-SET steps = ARRAY['잔에 초코 파우더(30g)와 우유(220ml)를 넣고 잘 저어줍니다.', '얼음을 가득 채웁니다.', '기호에 따라 휘핑 크림을 올립니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['잔에 초코 파우더(30g)와 우유(220ml)를 넣고 잘 저어줍니다.', '얼음을 가득 채웁니다.', '기호에 따라 휘핑 크림을 올립니다.']
 WHERE name = '아이스 초코라떼';
 
 -- 핫 그린티라떼
 UPDATE recipes
-SET steps = ARRAY['뜨거운 잔에 녹차 파우더(20g)와 설탕(10g)을 넣습니다.', '뜨거운 물(30ml)을 부어 파우더가 뭉치지 않게 잘 풀어줍니다.', '우유(220ml)를 곱게 스티밍합니다.', '녹차 베이스에 스팀 우유를 부으면서 잘 저어줍니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['뜨거운 잔에 녹차 파우더(20g)와 설탕(10g)을 넣습니다.', '뜨거운 물(30ml)을 부어 파우더가 뭉치지 않게 잘 풀어줍니다.', '우유(220ml)를 곱게 스티밍합니다.', '녹차 베이스에 스팀 우유를 부으면서 잘 저어줍니다.']
 WHERE name = '핫 그린티라떼';
 
 -- 아이스 그린티라떼
 UPDATE recipes
-SET steps = ARRAY['잔에 녹차 파우더(20g)와 설탕(10g), 우유(220ml)를 넣고 잘 저어줍니다.', '얼음을 가득 채웁니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['잔에 녹차 파우더(20g)와 설탕(10g), 우유(220ml)를 넣고 잘 저어줍니다.', '얼음을 가득 채웁니다.']
 WHERE name = '아이스 그린티라떼';
 
 -- 핫 고구마라떼
 UPDATE recipes
-SET steps = ARRAY['뜨거운 잔에 고구마 페이스트(40g)를 넣습니다.', '우유(250ml)를 스티밍합니다.', '고구마 페이스트에 스팀 우유를 부으면서 덩어리가 없도록 잘 저어줍니다.', '기호에 따라 견과류 토핑을 올립니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['뜨거운 잔에 고구마 페이스트(40g)를 넣습니다.', '우유(250ml)를 스티밍합니다.', '고구마 페이스트에 스팀 우유를 부으면서 덩어리가 없도록 잘 저어줍니다.', '기호에 따라 견과류 토핑을 올립니다.']
 WHERE name = '핫 고구마라떼';
 
 -- 핫 생강라떼
 UPDATE recipes
-SET steps = ARRAY['뜨거운 잔에 생강청(30g)을 넣습니다.', '우유(250ml)를 스티밍합니다.', '생강청에 스팀 우유를 부으면서 잘 저어줍니다.', '시나몬 파우더를 살짝 뿌려 제공합니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['뜨거운 잔에 생강청(30g)을 넣습니다.', '우유(250ml)를 스티밍합니다.', '생강청에 스팀 우유를 부으면서 잘 저어줍니다.', '시나몬 파우더를 살짝 뿌려 제공합니다.']
 WHERE name = '핫 생강라떼';
 
 -- 아이스 미숫가루라떼
 UPDATE recipes
-SET steps = ARRAY['블렌더에 미숫가루(40g), 우유(250ml), 꿀(15ml), 얼음(8개)을 넣습니다.', '내용물이 부드러워질 때까지 약 30초간 블렌딩합니다.', '잔에 옮겨 담아 제공합니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['블렌더에 미숫가루(40g), 우유(250ml), 꿀(15ml), 얼음(8개)을 넣습니다.', '내용물이 부드러워질 때까지 약 30초간 블렌딩합니다.', '잔에 옮겨 담아 제공합니다.']
 WHERE name = '아이스 미숫가루라떼';
 
 -- 수제꽃차 / 생강차 / 대추차 / 유자차 / 자몽차 / 레몬차 (청 기반 차)
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 수제꽃차 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 3-4분 정도 기다립니다.', '고객에게 제공합니다.'] WHERE name = '핫 수제꽃차';
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 생강청(30g)을 넣습니다.', '뜨거운 물(250ml)을 붓습니다.', '청이 잘 녹도록 저어주고, 대추 슬라이스를 띄웁니다.', '고객에게 제공합니다.'] WHERE name = '핫 생강차';
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 말린 대추 슬라이스(10g)를 넣습니다.', '뜨거운 물(300ml)을 붓고 5분 이상 충분히 우려냅니다.', '꿀이나 설탕을 취향에 맞게 추가합니다.', '고객에게 제공합니다.'] WHERE name = '핫 대추차';
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 유자청(40g)을 넣습니다.', '뜨거운 물(250ml)을 붓고 청이 잘 녹도록 저어줍니다.', '고객에게 제공합니다.'] WHERE name = '핫 유자차';
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 자몽청(40g)을 넣습니다.', '뜨거운 물(250ml)을 붓고 청이 잘 녹도록 저어줍니다.', '로즈마리 잎으로 장식합니다.', '고객에게 제공합니다.'] WHERE name = '핫 자몽차';
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 레몬청(40g)을 넣습니다.', '뜨거운 물(250ml)을 붓고 청이 잘 녹도록 저어줍니다.', '레몬 슬라이스를 추가합니다.', '고객에게 제공합니다.'] WHERE name = '핫 레몬차';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 수제꽃차 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 3-4분 정도 기다립니다.'] WHERE name = '핫 수제꽃차';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 생강청(30g)을 넣습니다.', '뜨거운 물(250ml)을 붓습니다.', '청이 잘 녹도록 저어주고, 대추 슬라이스를 띄웁니다.'] WHERE name = '핫 생강차';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 말린 대추 슬라이스(10g)를 넣습니다.', '뜨거운 물(300ml)을 붓고 5분 이상 충분히 우려냅니다.', '꿀이나 설탕을 취향에 맞게 추가합니다.'] WHERE name = '핫 대추차';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 유자청(40g)을 넣습니다.', '뜨거운 물(250ml)을 붓고 청이 잘 녹도록 저어줍니다.'] WHERE name = '핫 유자차';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 자몽청(40g)을 넣습니다.', '뜨거운 물(250ml)을 붓고 청이 잘 녹도록 저어줍니다.', '로즈마리 잎으로 장식합니다.'] WHERE name = '핫 자몽차';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 레몬청(40g)을 넣습니다.', '뜨거운 물(250ml)을 붓고 청이 잘 녹도록 저어줍니다.', '레몬 슬라이스를 추가합니다.'] WHERE name = '핫 레몬차';
 
 -- 허브티 & 홍차 (티백 기반)
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 히비스커스 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 3-5분 정도 기다립니다.', '고객에게 제공합니다.'] WHERE name = '핫 히비스커스';
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 캐모마일 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 3-4분 정도 기다립니다.', '고객에게 제공합니다.'] WHERE name = '핫 캐모마일';
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 페퍼민트 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 3-4분 정도 기다립니다.', '고객에게 제공합니다.'] WHERE name = '핫 페퍼민트';
-UPDATE recipes SET steps = ARRAY['뜨거운 잔에 얼그레이 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 2-3분 정도 기다립니다.', '고객에게 제공합니다.'] WHERE name = '핫 얼그레이';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 히비스커스 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 3-5분 정도 기다립니다.'] WHERE name = '핫 히비스커스';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 캐모마일 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 3-4분 정도 기다립니다.'] WHERE name = '핫 캐모마일';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 페퍼민트 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 3-4분 정도 기다립니다.'] WHERE name = '핫 페퍼민트';
+UPDATE recipes SET steps = ARRAY['뜨거운 잔에 얼그레이 티백(1개)을 넣습니다.', '뜨거운 물(300ml)을 붓습니다.', '티백이 충분히 우러나도록 2-3분 정도 기다립니다.'] WHERE name = '핫 얼그레이';
 
 -- 살얼음 동동식혜
 UPDATE recipes
-SET steps = ARRAY['차가운 유리잔을 준비합니다.', '살얼음이 있는 식혜(300ml)를 밥알과 함께 잔에 붓습니다.', '기호에 따라 잣이나 밥알을 추가로 띄웁니다.', '고객에게 제공합니다.']
+SET steps = ARRAY['차가운 유리잔을 준비합니다.', '살얼음이 있는 식혜(300ml)를 밥알과 함께 잔에 붓습니다.', '기호에 따라 잣이나 밥알을 추가로 띄웁니다.']
 WHERE name = '아이스 살얼음 동동식혜';
 
 -- 2-5. 레시피-재료 관계(Recipe-Ingredients) 테이블 최종 삽입

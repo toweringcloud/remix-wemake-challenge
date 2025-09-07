@@ -8,5 +8,5 @@
 # Additional
 .env
 bun.lock
-./app/models/migrations/*
-./app/models/backup*
+/app/models/migrations/*
+/app/models/backup*

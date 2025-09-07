@@ -34,6 +34,7 @@ export const users = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     role: userRoleEnum("role").notNull(),
+    auth: varchar("auth_code", { length: 512 }),
     mobile: varchar("mobile", { length: 16 }),
     avatar: text("avatar_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
