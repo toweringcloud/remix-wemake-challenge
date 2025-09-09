@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Form, useNavigate, useNavigation } from "react-router";
+import { Coffee, UserRound, Briefcase, LoaderCircle } from "lucide-react";
+
 import { useRoleStore } from "~/stores/role.store";
-import { Coffee, UserRound, Briefcase } from "lucide-react";
+import { createClient } from "~/utils/supabase.server";
 import type { Route } from "./+types/login.page";
 
 export const meta: Route.MetaFunction = () => [
@@ -9,30 +11,44 @@ export const meta: Route.MetaFunction = () => [
   { name: "description", content: "sign-in with role and code" },
 ];
 
-export default function LoginPage() {
+export const action = async ({ request }: Route.ActionArgs) => {
+  const { login } = useRoleStore();
+  const navigate = useNavigate();
+
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const formData = await request.formData();
+  const roleName = formData.get("role");
+  const roleCode = roleName === "manager" ? "MA" : "BA";
+  const authCode = formData.get("auth");
+  console.log("formData", formData);
+
+  const { supabase } = createClient(request);
+  const { data: users } = await supabase
+    .from("users")
+    .select("*")
+    .eq("role", roleCode as string)
+    .eq("auth_code", authCode as string);
+  console.log("users", users);
+
+  const exists = users && users.length > 0 ? true : false;
+  if (exists) {
+    login(roleName as "staff" | "manager");
+    navigate("/dashboard");
+  } else {
+    return {
+      message: "Wrong entrance code",
+    };
+  }
+};
+
+export default function LoginPage({ actionData }: Route.ComponentProps) {
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+
   const [selectedRole, setSelectedRole] = useState<"staff" | "manager">(
     "staff"
   );
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  const { login } = useRoleStore();
-  const navigate = useNavigate();
-
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
-
-    if (selectedRole === "manager" && password === "cafem001") {
-      login("manager");
-      navigate("/dashboard");
-    } else if (selectedRole === "staff" && password === "cafeb001") {
-      login("staff");
-      navigate("/dashboard");
-    } else {
-      setError("입장코드가 올바르지 않습니다.");
-    }
-  };
 
   return (
     <div className="flex items-center justify-center h-full bg-amber-50">
@@ -40,7 +56,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold text-center text-amber-800 flex items-center justify-center gap-2">
           <Coffee className="text-amber-600" size={30} /> <span>카페리움</span>
         </h1>
-        <form onSubmit={handleLogin} className="space-y-6">
+        <Form method="post" className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-amber-800 mb-2">
               역할을 선택해 주세요.
@@ -57,7 +73,7 @@ export default function LoginPage() {
                 <input
                   type="radio"
                   name="role"
-                  value="staff"
+                  value="BA"
                   checked={selectedRole === "staff"}
                   onChange={() => setSelectedRole("staff")}
                   className="sr-only"
@@ -95,8 +111,9 @@ export default function LoginPage() {
               입장코드를 입력해 주세요.
             </label>
             <input
-              id="password-input"
               type="password"
+              id="password-input"
+              name="auth"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 mt-1 border border-amber-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50 text-amber-800 placeholder-amber-400" // 입력창 스타일 변경
@@ -104,17 +121,24 @@ export default function LoginPage() {
               placeholder="cafe로 시작하는 입장코드 입력"
             />
           </div>
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
           <div>
             {/* ✅ 로그인 버튼 색상을 다크 브라우니 톤으로 변경 */}
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full px-4 py-2 font-bold text-white bg-amber-800 rounded-md hover:bg-amber-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 shadow-lg transition-colors"
             >
-              로그인
+              {isSubmitting ? (
+                <LoaderCircle className="animate-spin" />
+              ) : (
+                "로그인"
+              )}
             </button>
+            {actionData?.message && (
+              <p className="text-sm text-red-500">{actionData.message}</p>
+            )}
           </div>
-        </form>
+        </Form>
       </div>
     </div>
   );

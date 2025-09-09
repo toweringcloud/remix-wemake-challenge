@@ -40,21 +40,21 @@ INSERT INTO users (id, role, mobile, avatar_url, cafe_id) VALUES
 WITH
 -- 2-1. 재고 아이템(Items) 삽입 후 ID와 이름 반환
 inserted_items AS (
-  INSERT INTO items (name, count, unit, cafe_id) VALUES
-    ('하우스 블렌드 원두', 5000, 'g', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('서울우유', 10, 'L', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('바닐라 시럽', 2, 'L', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('카라멜 소스', 2, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('초콜릿 파우더', 3, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('유기농 녹차 파우더', 1, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('국내산 고구마 페이스트', 3, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('생강청', 2, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('18곡 미숫가루', 2, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('유자청', 5, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('자몽청', 5, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('레몬청', 5, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('꽃차/허브티 믹스', 500, 'g', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
-    ('식혜 원액', 10, 'L', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0')
+  INSERT INTO items (category, name, count, unit, cafe_id) VALUES
+    ('식재료', '하우스 블렌드 원두', 5000, 'g', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '서울우유', 10, 'L', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '바닐라 시럽', 2, 'L', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '카라멜 소스', 2, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '초콜릿 파우더', 3, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '유기농 녹차 파우더', 1, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '국내산 고구마 페이스트', 3, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '생강청', 2, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '18곡 미숫가루', 2, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '유자청', 5, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '자몽청', 5, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '레몬청', 5, 'kg', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '꽃차/허브티 믹스', 500, 'g', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'),
+    ('식재료', '식혜 원액', 10, 'L', 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0')
   RETURNING id, name
 ),
 
@@ -97,15 +97,16 @@ inserted_menus AS (
 
 -- 2-4. 레시피(Recipes) 삽입 후 ID와 이름 반환
 inserted_recipes AS (
-  INSERT INTO recipes (name, steps, menu_id, cafe_id)
+  INSERT INTO recipes (name, menu_id, cafe_id)
   SELECT
     CASE WHEN m.is_hot THEN '핫 ' || m.name ELSE '아이스 ' || m.name END,
-    ARRAY['재료를 계량하여 컵에 넣는다.', '잘 섞어서 제공한다.'],
     m.id,
     'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'
   FROM inserted_menus AS m
   RETURNING id, name
 )
+
+-- 2-5. 레시피(Recipes) 상세 설명 및 조리 단계 업데이트
 UPDATE recipes SET description = '깊고 진한 에스프레소에 뜨거운 물을 더한 클래식 커피' WHERE name = '핫 아메리카노';
 UPDATE recipes SET description = '시원한 물과 얼음 위에 에스프레소를 부어 깔끔하게 즐기는 커피' WHERE name = '아이스 아메리카노';
 UPDATE recipes SET description = '달콤한 바닐라 향의 스팀 밀크에 에스프레소 샷과 카라멜 소스를 얹은 부드러운 커피' WHERE name = '핫 카라멜 마끼아또';
@@ -227,7 +228,7 @@ UPDATE recipes
 SET steps = ARRAY['차가운 유리잔을 준비합니다.', '살얼음이 있는 식혜(300ml)를 밥알과 함께 잔에 붓습니다.', '기호에 따라 잣이나 밥알을 추가로 띄웁니다.']
 WHERE name = '아이스 살얼음 동동식혜';
 
--- 2-5. 레시피-재료 관계(Recipe-Ingredients) 테이블 최종 삽입
+-- 2-6. 레시피-재료 관계(Recipe-Ingredients) 테이블 최종 삽입
 INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity)
 SELECT
   r.id AS recipe_id,

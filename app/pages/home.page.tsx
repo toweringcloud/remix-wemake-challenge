@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRoleStore } from "~/stores/role.store";
-import type { Route } from "./+types/home.page";
+import Autoplay from "embla-carousel-autoplay";
+// import { DateTime } from "luxon";
+
+import { PulsatingButton } from "~/components/magicui/pulsating-button";
 import {
   Carousel,
   CarouselContent,
@@ -8,12 +11,10 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "~/components/ui/carousel";
-import Autoplay from "embla-carousel-autoplay";
-import { useState } from "react";
-import { PulsatingButton } from "~/components/magicui/pulsating-button";
 // import { getCafeData } from "~/queries/cafe.queries";
-// import { DateTime } from "luxon";
+import { useRoleStore } from "~/stores/role.store";
 import { createClient } from "~/utils/supabase.server";
+import type { Route } from "./+types/home.page";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Home | Caferium" },
@@ -31,20 +32,6 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const { data: cafes } = await supabase.from("cafes").select();
   console.log("cafes", cafes);
-  // cafes [
-  //   {
-  //     id: 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0',
-  //     name: '어반 그라인드',
-  //     description: '도심 속의 현대적인 커피 공간',
-  //     logo_url: null,
-  //     headline: '최고급 원두로 내린 스페셜티 커피',
-  //     body: '매일 아침 직접 로스팅한 신선한 원두를 사용합니다.',
-  //     video_url: null,
-  //     photos_urls: null,
-  //     created_at: '2025-09-07T13:40:00.900276+00:00',
-  //     updated_at: '2025-09-07T13:40:00.900276+00:00'
-  //   }
-  // ]
 
   if (cafes && cafes.length > 0) {
     return cafes[0];

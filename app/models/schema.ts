@@ -16,13 +16,13 @@ import { relations } from "drizzle-orm";
 // ☕️ Cafe (카페)
 export const cafes = pgTable("cafes", {
   id: uuid("id").primaryKey().defaultRandom(),
-  name: varchar("name", { length: 255 }).unique().notNull(),
+  name: varchar("name", { length: 128 }).unique().notNull(),
   description: text("description"),
-  logo: text("logo_url"),
   headline: text("headline"),
   body: text("body"),
+  logo: text("logo_url"),
   video: text("video_url"),
-  photos: text("photos_urls").array(), // 이미지 URL 목록 (배열 타입)
+  photos: text("photos_urls").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
@@ -56,9 +56,10 @@ export const users = pgTable(
 // 📦 Item (재고 아이템)
 export const items = pgTable("items", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar("name", { length: 255 }).notNull(),
+  category: varchar("category", { length: 32 }).notNull(),
+  name: varchar("name", { length: 128 }).notNull(),
   count: integer("count").notNull().default(0),
-  unit: varchar("unit", { length: 50 }),
+  unit: varchar("unit", { length: 16 }),
   photo: text("photo_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -70,8 +71,8 @@ export const items = pgTable("items", {
 // 🍳 Menu (메뉴)
 export const menus = pgTable("menus", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar("name", { length: 255 }).notNull(),
-  category: varchar("category", { length: 50 }).notNull(),
+  category: varchar("category", { length: 32 }).notNull(),
+  name: varchar("name", { length: 128 }).notNull(),
   isHot: boolean("is_hot").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -83,10 +84,10 @@ export const menus = pgTable("menus", {
 // 🍳 Recipe (레시피)
 export const recipes = pgTable("recipes", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: varchar("name", { length: 128 }).notNull(),
   description: text("description"),
-  // ingredients: text("ingredients").array().notNull(), // 재료 목록 (배열 타입)
-  steps: text("steps").array().notNull(), // 단계 목록 (배열 타입)
+  // ingredients: text("ingredients").array().notNull(),
+  steps: text("steps").array().notNull(),
   video: text("video_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -101,7 +102,7 @@ export const recipes = pgTable("recipes", {
 // 🥕 Ingredient (재료)
 export const ingredients = pgTable("ingredients", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: varchar("name", { length: 128 }).notNull(),
   photo: text("photo_url"),
   cafeId: uuid("cafe_id")
     .notNull()
@@ -118,7 +119,7 @@ export const recipeIngredients = pgTable(
     ingredientId: bigint("ingredient_id", { mode: "number" })
       .notNull()
       .references(() => ingredients.id, { onDelete: "cascade" }), // 재료 삭제 시 같이 삭제
-    quantity: varchar("quantity", { length: 100 }).notNull(), // 예: "2샷", "200ml"
+    quantity: varchar("quantity", { length: 16 }).notNull(), // 예: "2샷", "200ml"
   },
   (table) => {
     // recipeId와 ingredientId를 묶어 복합 기본 키로 설정
@@ -153,10 +154,7 @@ export const menusRelations = relations(menus, ({ one }) => ({
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
   cafe: one(cafes, { fields: [recipes.cafeId], references: [cafes.id] }),
-  recipeMenu: one(menus, {
-    fields: [recipes.menuId],
-    references: [menus.id],
-  }),
+  menu: one(menus, { fields: [recipes.menuId], references: [menus.id] }),
   recipeIngredients: many(recipeIngredients),
 }));
 

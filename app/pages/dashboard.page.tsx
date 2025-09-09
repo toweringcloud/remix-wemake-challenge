@@ -1,14 +1,15 @@
-import { useRoleStore } from "~/stores/role.store";
-import { BookMarked, Archive } from "lucide-react"; // 아이콘 import
+import { BookMarked, Archive } from "lucide-react";
+
 import type { Route } from "./+types/dashboard.page";
 import { MenuCard } from "~/components/menu-card";
+import { useRoleStore } from "~/stores/role.store";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Dashboard | Caferium" },
   { name: "description", content: "select recipe or inventory menu" },
 ];
 
-export default function DashboardHomePage() {
+export default function DashboardPage() {
   const { role } = useRoleStore();
 
   return (
