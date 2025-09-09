@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Form, useNavigate, useNavigation } from "react-router";
+import { Form, redirect, useNavigation } from "react-router-dom";
 import { Coffee, UserRound, Briefcase, LoaderCircle } from "lucide-react";
 
-import { useRoleStore } from "~/stores/role.store";
 import { createClient } from "~/utils/supabase.server";
 import type { Route } from "./+types/login.page";
 
@@ -12,10 +11,7 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  const { login } = useRoleStore();
-  const navigate = useNavigate();
-
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 500));
   const formData = await request.formData();
   const roleName = formData.get("role");
   const roleCode = roleName === "manager" ? "MA" : "BA";
@@ -25,18 +21,17 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const { supabase } = createClient(request);
   const { data: users } = await supabase
     .from("users")
-    .select("*")
+    .select()
     .eq("role", roleCode as string)
     .eq("auth_code", authCode as string);
   console.log("users", users);
 
   const exists = users && users.length > 0 ? true : false;
   if (exists) {
-    login(roleName as "staff" | "manager");
-    navigate("/dashboard");
+    return redirect("/dashboard?login=success&role=" + roleName);
   } else {
     return {
-      message: "Wrong entrance code",
+      message: "입장코드 정보가 올바르지 않습니다!",
     };
   }
 };
@@ -129,7 +124,9 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
               className="w-full px-4 py-2 font-bold text-white bg-amber-800 rounded-md hover:bg-amber-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 shadow-lg transition-colors"
             >
               {isSubmitting ? (
-                <LoaderCircle className="animate-spin" />
+                <span className="flex justify-center items-center">
+                  <LoaderCircle className="animate-spin" />
+                </span>
               ) : (
                 "로그인"
               )}

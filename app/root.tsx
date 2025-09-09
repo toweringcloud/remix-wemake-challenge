@@ -12,6 +12,8 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { cn } from "./lib/utils";
+import { createClient } from "./utils/supabase.server";
+import { useRoleStore } from "./stores/role.store";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -44,10 +46,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { supabase } = createClient(request);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return { user };
+};
+
+export default function App({ loaderData }: Route.ComponentProps) {
   const { pathname } = useLocation();
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
+
+  const { login } = useRoleStore();
+  const isLoggedIn = loaderData.user !== null;
+  if (isLoggedIn) login("staff");
 
   return (
     <div

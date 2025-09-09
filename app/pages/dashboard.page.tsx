@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import type { LoaderFunction } from "react-router";
 import { BookMarked, Archive } from "lucide-react";
 
 import type { Route } from "./+types/dashboard.page";
@@ -9,8 +11,30 @@ export const meta: Route.MetaFunction = () => [
   { name: "description", content: "select recipe or inventory menu" },
 ];
 
-export default function DashboardPage() {
-  const { role } = useRoleStore();
+export const loader: LoaderFunction = async ({ request }) => {
+  const url = new URL(request.url);
+  const loginStatus = url.searchParams.get("login");
+  const roleName = url.searchParams.get("role");
+  return { loginStatus, roleName };
+};
+
+export default function DashboardPage({ loaderData }: Route.ComponentProps) {
+  // const { loginStatus, roleName } = useLoaderData<typeof loader>();
+  const { loginStatus, roleName } = loaderData!;
+  console.log("로그인 성공! 역할:", loaderData);
+
+  const { login, role } = useRoleStore();
+
+  useEffect(() => {
+    if (loginStatus === "success" && roleName) {
+      login(roleName);
+      console.log(`로그인 성공! 역할: ${roleName}`);
+
+      // 중요: 이 로직은 새로고침 시에는 실행되지 않으므로,
+      // 한 번 상태를 설정한 후 URL을 깔끔하게 정리하고 싶다면
+      window.history.replaceState(null, "", "/dashboard");
+    }
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-6">
