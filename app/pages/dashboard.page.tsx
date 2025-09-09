@@ -19,10 +19,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export default function DashboardPage({ loaderData }: Route.ComponentProps) {
-  // const { loginStatus, roleName } = useLoaderData<typeof loader>();
   const { loginStatus, roleName } = loaderData!;
-  console.log("로그인 성공! 역할:", loaderData);
-
   const { login, role } = useRoleStore();
 
   useEffect(() => {
