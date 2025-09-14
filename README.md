@@ -44,17 +44,19 @@ DATABASE_URL=
 $ bun run db:generate
 $ drizzle-kit generate
 No config path provided, using default 'drizzle.config.ts'
-Reading config file '{workspace}\remix-wemake-challenge\drizzle.config.ts'
-6 tables
+Reading config file 'D:\work\templates\remix-wemake-challenge\drizzle.config.ts'
+9 tables
 cafes 10 columns 0 indexes 0 fks
 ingredients 4 columns 0 indexes 1 fks
-items 8 columns 0 indexes 1 fks
+items 9 columns 0 indexes 2 fks
+menus 11 columns 0 indexes 2 fks
+products 4 columns 0 indexes 1 fks
 recipe_ingredients 3 columns 0 indexes 2 fks
-recipes 8 columns 0 indexes 1 fks
-users 8 columns 1 indexes 1 fks
+recipes 8 columns 0 indexes 2 fks
+stocks 4 columns 0 indexes 1 fks
+users 8 columns 0 indexes 1 fks
 
-[✓] Your SQL migration file ➜ app\models\migrations\0000_huge_wallop.sql 🚀
-No schema changes, nothing to migrate 😴
+[✓] Your SQL migration file ➜ app\models\migrations\0000_thin_sleepwalker.sql 🚀
 ```
 
 - migrate db schema
@@ -66,6 +68,16 @@ No config path provided, using default 'drizzle.config.ts'
 Reading config file '{workspace}\remix-wemake-challenge\drizzle.config.ts'
 Using 'pg' driver for database querying
 [✓] migrations applied successfully!
+```
+
+- add shadcn/ui component
+
+```sh
+$ bunx --bun shadcn@latest add button
+√ Checking registry.
+√ Installing dependencies.
+√ Created 1 file:
+  - app\components\ui\dialog.tsx
 ```
 
 ### launch

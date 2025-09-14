@@ -15,7 +15,7 @@ interface MenuCardProps {
   icon: React.ReactNode;
 }
 
-export function MenuCard({ path, name, description, icon }: MenuCardProps) {
+export function FeatureCard({ path, name, description, icon }: MenuCardProps) {
   return (
     <Link to={path}>
       <div className="group flex flex-col h-full">

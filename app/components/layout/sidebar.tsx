@@ -67,7 +67,7 @@ export default function Sidebar() {
 
           {role === "manager" && (
             <NavLink
-              to="/dashboard/inventory"
+              to="/dashboard/items"
               className={({ isActive }) =>
                 `${navLinkClass} ${getActiveClass(isActive)}`
               }

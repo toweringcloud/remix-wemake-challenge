@@ -51,7 +51,7 @@ export default function Header() {
               </NavLink>
 
               {role === "manager" && (
-                <NavLink to="/dashboard/inventory" className={navLinkClass}>
+                <NavLink to="/dashboard/items" className={navLinkClass}>
                   <Archive size={18} />
                   <span>재고 관리</span>
                 </NavLink>

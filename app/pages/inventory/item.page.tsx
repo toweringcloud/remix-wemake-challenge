@@ -13,7 +13,7 @@ export const meta: Route.MetaFunction = () => [
   },
 ];
 
-export default function InventoryPage() {
+export default function ItemPage() {
   const navigate = useNavigate();
   const { role } = useRoleStore();
 

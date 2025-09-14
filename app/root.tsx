@@ -11,7 +11,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { cn } from "./lib/utils";
+import { cn } from "./utils/tailwindcss.util";
 import { createClient } from "./utils/supabase.server";
 import { useRoleStore } from "./stores/role.store";
 
@@ -63,17 +63,18 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const isLoggedIn = loaderData.user !== null;
   if (isLoggedIn) login("staff");
 
-  return (
-    <div
-      className={cn({
-        "py-28 px-5 md:px-20": !pathname.includes("/auth/"),
-        "transition-opacity animate-pulse": isLoading,
-      })}
-    >
-      {pathname.includes("/auth") ? null : <></>}
-      <Outlet />
-    </div>
-  );
+  return <Outlet />;
+  // return (
+  //   <div
+  //     className={cn({
+  //       "py-28 px-5 md:px-20": !pathname.includes("/auth/"),
+  //       "transition-opacity animate-pulse": isLoading,
+  //     })}
+  //   >
+  //     {pathname.includes("/auth") ? null : <></>}
+  //     <Outlet />
+  //   </div>
+  // );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

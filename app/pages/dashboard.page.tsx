@@ -3,7 +3,7 @@ import type { LoaderFunction } from "react-router";
 import { BookMarked, Archive } from "lucide-react";
 
 import type { Route } from "./+types/dashboard.page";
-import { MenuCard } from "~/components/menu-card";
+import { FeatureCard } from "~/components/feature-card";
 import { useRoleStore } from "~/stores/role.store";
 
 export const meta: Route.MetaFunction = () => [
@@ -42,7 +42,43 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
         원하시는 메뉴를 선택해주세요.
       </p>
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
-        <MenuCard
+        {role === "admin" || role === "manager" ? (
+          <>
+            <FeatureCard
+              path="/dashboard/cafe"
+              name={"카페 관리"}
+              description={
+                <p className="text-stone-500">
+                  카페의 기본 정보를 조회하고
+                  <br /> 수정합니다.
+                </p>
+              }
+              icon={
+                <BookMarked
+                  size={48}
+                  className="mx-auto mb-4 text-amber-600 group-hover:scale-110 transition-transform"
+                />
+              }
+            />
+          </>
+        ) : null}
+        <FeatureCard
+          path="/dashboard/products"
+          name={role === "staff" ? "상품" : "상품 관리"}
+          description={
+            <p className="text-stone-500">
+              카페의 상품 정보를 조회하고
+              <br /> 수정합니다.
+            </p>
+          }
+          icon={
+            <BookMarked
+              size={48}
+              className="mx-auto mb-4 text-amber-600 group-hover:scale-110 transition-transform"
+            />
+          }
+        />
+        <FeatureCard
           path="/dashboard/recipes"
           name={role === "staff" ? "레시피" : "레시피 관리"}
           description={
@@ -58,14 +94,12 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
             />
           }
         />
-        {role === "manager" && (
-          <MenuCard
-            path="/dashboard/inventory"
-            name="재고 관리"
+        {role === "manager" ? (
+          <FeatureCard
+            path="/dashboard/stocks"
+            name={"재고 그룹 관리"}
             description={
-              <p className="text-stone-500">
-                원두, 우유, 시럽 등<br /> 각종 재료의 재고를 관리합니다.
-              </p>
+              <p className="text-stone-500">재고 그룹을 관리합니다.</p>
             }
             icon={
               <Archive
@@ -74,7 +108,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
               />
             }
           />
-        )}
+        ) : null}
       </div>
     </div>
   );

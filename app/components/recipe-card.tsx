@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"; // ✅ useState, useEffect import
 import { Link } from "react-router-dom";
+import { PlaceholderImage } from "~/components/common/placeholder-image";
 import {
   Card,
   CardContent,
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { PlaceholderImage } from "./common/placeholder-image";
 
 interface RecipeCardProps {
   id: string;

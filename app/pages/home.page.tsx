@@ -49,7 +49,7 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
   );
 
   // ✅ 슬라이드 쇼에 사용할 샘플 커피숍 이미지 URL 배열
-  const imageUrls = [
+  const imageUrls = loaderData?.photos_url || [
     "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?q=80&w=1740&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=1742&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1887&auto=format&fit=crop",
@@ -74,7 +74,7 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
         }}
       >
         <CarouselContent>
-          {imageUrls.map((url, index) => (
+          {imageUrls.map((url: string, index: number) => (
             <CarouselItem key={index}>
               <div className="aspect-video md:aspect-[2/1] lg:aspect-[2.4/1]">
                 <img

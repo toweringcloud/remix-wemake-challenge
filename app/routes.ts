@@ -11,18 +11,26 @@ export default [
       // 대시보드
       index("pages/dashboard.page.tsx"),
 
+      // 카페 관리
+      route("cafe", "pages/cafe/cafe.page.tsx"),
+
+      // 상품 관리
+      route("products", "pages/product/product.page.tsx"),
+      route("products/:productId/menus", "pages/menu/menu.page.tsx"),
+
       // 레시피 관리
-      route("recipes", "pages/recipes/recipe-list.page.tsx"),
-      route("recipes/new", "pages/recipes/recipe-form.page.tsx", {
+      route("recipes", "pages/recipe/recipe-list.page.tsx"),
+      route("recipes/new", "pages/recipe/recipe-form.page.tsx", {
         id: "recipeNew",
       }),
-      route("recipes/:recipeId", "pages/recipes/recipe-detail.page.tsx"),
-      route("recipes/:recipeId/edit", "pages/recipes/recipe-form.page.tsx", {
+      route("recipes/:recipeId", "pages/recipe/recipe-detail.page.tsx"),
+      route("recipes/:recipeId/edit", "pages/recipe/recipe-form.page.tsx", {
         id: "recipeEdit",
       }),
 
       // 재고 관리
-      route("inventory", "pages/inventory/inventory.page.tsx"),
+      route("stocks", "pages/inventory/stock.page.tsx"),
+      route("stocks/:stockId/items", "pages/inventory/item.page.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;

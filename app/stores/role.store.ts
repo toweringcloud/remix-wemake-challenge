@@ -2,9 +2,9 @@ import { create } from "zustand";
 
 // 권한 스토어의 상태와 액션에 대한 타입 정의
 interface RoleState {
-  role: "manager" | "staff" | null;
+  role: "admin" | "manager" | "staff" | null;
   isLoggedIn: boolean;
-  login: (role: "manager" | "staff") => void;
+  login: (role: "admin" | "manager" | "staff") => void;
   logout: () => void;
 }
 
