@@ -67,8 +67,8 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
           name={role === "staff" ? "상품" : "상품 관리"}
           description={
             <p className="text-stone-500">
-              카페의 상품 정보를 조회하고
-              <br /> 수정합니다.
+              카페의 상품 정보와 상품별 메뉴를
+              <br /> 확인하고 조회합니다.
             </p>
           }
           icon={
@@ -94,12 +94,15 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
             />
           }
         />
-        {role === "manager" ? (
+        {role === "admin" || role === "manager" ? (
           <FeatureCard
             path="/dashboard/stocks"
-            name={"재고 그룹 관리"}
+            name={"재고 관리"}
             description={
-              <p className="text-stone-500">재고 그룹을 관리합니다.</p>
+              <p className="text-stone-500">
+                카페의 식재료에 대한
+                <br /> 재고를 관리합니다.
+              </p>
             }
             icon={
               <Archive

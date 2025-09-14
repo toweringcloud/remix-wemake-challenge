@@ -16,7 +16,7 @@ export default [
 
       // 상품 관리
       route("products", "pages/product/product.page.tsx"),
-      route("products/:productId/menus", "pages/menu/menu.page.tsx"),
+      route("products/:productId/menus", "pages/product/menu.page.tsx"),
 
       // 레시피 관리
       route("recipes", "pages/recipe/recipe-list.page.tsx"),
