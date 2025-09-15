@@ -14,7 +14,7 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export default function RecipeDetailPage() {
-  const { role } = useRoleStore();
+  const { roleCode } = useRoleStore();
   const { recipeId } = useParams();
 
   // 실제 앱에서는 useParams의 recipeId를 사용해 API로 데이터를 가져옵니다.
@@ -65,7 +65,7 @@ export default function RecipeDetailPage() {
             </button>
           </Link>
           {/* 매니저일 경우에만 '수정하기' 버튼이 보입니다. */}
-          {role === "manager" && (
+          {roleCode === "MA" && (
             <Link to={`/dashboard/recipes/${recipe.id}/edit`}>
               <button className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">
                 수정

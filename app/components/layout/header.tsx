@@ -1,10 +1,19 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import {
+  Menu,
+  Coffee,
+  LogOut,
+  BookMarked,
+  Archive,
+  CookingPot,
+  ShoppingCart,
+} from "lucide-react";
+
 import { useRoleStore } from "~/stores/role.store";
 import { useMenuStore } from "~/stores/menu.store";
-import { Menu, Coffee, LogOut, BookMarked, Archive } from "lucide-react";
 
 export default function Header() {
-  const { isLoggedIn, role, logout } = useRoleStore();
+  const { isLoggedIn, roleCode, cafeName, logout } = useRoleStore();
   const { toggleSidebar } = useMenuStore();
   const navigate = useNavigate();
 
@@ -38,25 +47,33 @@ export default function Header() {
             className="flex items-center gap-2 text-xl font-bold text-amber-800"
           >
             <Coffee className="text-amber-700" />
-            <span>카페리움</span>
+            <span>{cafeName}</span>
           </Link>
         </div>
 
         <nav className="hidden md:flex items-center space-x-2">
           {isLoggedIn && (
             <>
-              <NavLink to="/dashboard/recipes" className={navLinkClass}>
-                <BookMarked size={18} />
-                <span>{role === "staff" ? "레시피" : "레시피 관리"}</span>
-              </NavLink>
-
-              {role === "manager" && (
-                <NavLink to="/dashboard/items" className={navLinkClass}>
-                  <Archive size={18} />
-                  <span>재고 관리</span>
+              {roleCode === "SA" ? (
+                <NavLink to="/dashboard/cafe" className={navLinkClass}>
+                  <BookMarked size={18} />
+                  <span>{"카페"}</span>
                 </NavLink>
-              )}
-
+              ) : null}
+              {roleCode === "SA" || roleCode === "MA" ? (
+                <NavLink to="/dashboard/products" className={navLinkClass}>
+                  <ShoppingCart size={18} />
+                  <span>{"상품"}</span>
+                </NavLink>
+              ) : null}
+              <NavLink to="/dashboard/recipes" className={navLinkClass}>
+                <CookingPot size={18} />
+                <span>{"레시피"}</span>
+              </NavLink>
+              <NavLink to="/dashboard/stocks" className={navLinkClass}>
+                <Archive size={18} />
+                <span>{"재고"}</span>
+              </NavLink>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 text-amber-700 hover:bg-amber-100 font-semibold py-2 px-3 rounded-md transition-colors"

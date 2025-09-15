@@ -11,7 +11,7 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export default function RecipeListPage() {
-  const { role } = useRoleStore();
+  const { roleCode } = useRoleStore();
   const recipes = recipesData;
 
   const handleDelete = (recipeName: string) => {
@@ -22,11 +22,12 @@ export default function RecipeListPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">
-          {role === "staff" ? "레시피" : "레시피 관리"}
+        <h1 className="text-3xl font-bold text-amber-800">
+          {roleCode === "BA" ? "레시피" : "레시피 관리"}
         </h1>
+
         {/* 스토어에서 가져온 role 값으로 매니저 여부를 확인합니다. */}
-        {role === "manager" && (
+        {roleCode === "MA" && (
           <Link to="/dashboard/recipes/new">
             <button className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">
               + 새 레시피 등록
@@ -44,7 +45,7 @@ export default function RecipeListPage() {
             description={recipe.description}
             imageUrl={recipe.imageUrl}
             action={
-              role === "manager" ? (
+              roleCode === "MA" ? (
                 // 매니저일 경우: 수정/삭제 버튼
                 <div className="flex items-center gap-2 ml-auto -mb-2">
                   <Link

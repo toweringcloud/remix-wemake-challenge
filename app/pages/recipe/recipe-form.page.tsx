@@ -22,7 +22,7 @@ interface Ingredient {
 
 export default function RecipeFormPage() {
   const navigate = useNavigate();
-  const { role } = useRoleStore();
+  const { roleCode } = useRoleStore();
   const { recipeId } = useParams<{ recipeId: string }>();
 
   // recipeId가 있으면 수정 모드, 없으면 생성 모드
@@ -37,7 +37,7 @@ export default function RecipeFormPage() {
   const [steps, setSteps] = useState<string[]>([""]);
 
   useEffect(() => {
-    if (role !== "manager") {
+    if (roleCode !== "MA") {
       alert("접근 권한이 없습니다.");
       navigate("/dashboard");
     }
@@ -54,7 +54,7 @@ export default function RecipeFormPage() {
         setSteps(recipeToEdit.steps);
       }
     }
-  }, [isEditMode, recipeId, role, navigate]);
+  }, [isEditMode, recipeId, roleCode, navigate]);
 
   // 재료 관련 핸들러 (매개변수 타입 지정)
   const handleIngredientChange = (
@@ -93,7 +93,7 @@ export default function RecipeFormPage() {
   };
 
   // ✅ 매니저가 아닐 경우, 리다이렉트 되기 전까지 로딩 또는 null을 반환하여 UI 렌더링을 방지
-  if (role !== "manager") {
+  if (roleCode !== "MA") {
     return null; // 또는 <p>권한 확인 중...</p>
   }
 

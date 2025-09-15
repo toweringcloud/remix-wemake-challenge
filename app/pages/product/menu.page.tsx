@@ -64,7 +64,7 @@ const mockMenus: Menu[] = [
 ];
 
 export default function MenusPage() {
-  const { role } = useRoleStore();
+  const { roleCode } = useRoleStore();
   const { productId } = useParams();
 
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
@@ -95,7 +95,7 @@ export default function MenusPage() {
         <h1 className="text-3xl font-bold text-amber-800">
           {productId}번 상품의 메뉴 관리
         </h1>
-        {role === "manager" && (
+        {roleCode === "MA" && (
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" /> 새 메뉴 추가
           </Button>
@@ -146,7 +146,7 @@ export default function MenusPage() {
                   </span>
                 </div>
               </CardContent>
-              {role === "manager" && (
+              {roleCode === "MA" && (
                 <div className="absolute top-2 right-2">
                   <Button
                     variant="outline"

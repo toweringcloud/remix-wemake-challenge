@@ -15,16 +15,16 @@ import {
 
 export default function CafeEditPage() {
   const navigate = useNavigate();
-  const { role } = useRoleStore();
+  const { roleCode } = useRoleStore();
 
   // ✅ 폼 데이터를 위한 state
   const [name, setName] = useState("");
   const [headline, setHeadline] = useState("");
   const [description, setDescription] = useState("");
 
-  // ✅ 매니저 권한 확인
+  // ✅ 운영자 권한 확인
   useEffect(() => {
-    if (role !== "manager") {
+    if (roleCode !== "SA") {
       alert("접근 권한이 없습니다.");
       navigate("/dashboard");
     } else {
@@ -36,7 +36,7 @@ export default function CafeEditPage() {
         "매일 아침 직접 로스팅한 신선한 원두를 사용하며, 도심 속에서 편안한 휴식을 제공하는 현대적인 커피 공간입니다."
       );
     }
-  }, [role, navigate]);
+  }, [roleCode, navigate]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +46,7 @@ export default function CafeEditPage() {
     alert("카페 정보가 저장되었습니다.");
   };
 
-  if (role !== "manager") {
+  if (roleCode !== "SA" && roleCode !== "MA") {
     return null; // 권한이 없으면 렌더링하지 않음
   }
 

@@ -19,6 +19,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Pencil, PlusCircle } from "lucide-react";
+import { Link } from "react-router";
 
 // ✅ 1. 재고 그룹(Stock) 데이터의 타입을 명확하게 정의합니다.
 type Stock = {
@@ -57,7 +58,7 @@ const mockStocks: Stock[] = [
 ];
 
 export default function StocksPage() {
-  const { role } = useRoleStore();
+  const { roleCode } = useRoleStore();
 
   // ✅ 2. useState에 Stock 타입 또는 null을 가질 수 있다고 명시합니다.
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
@@ -88,10 +89,10 @@ export default function StocksPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-amber-800">재고 그룹 관리</h1>
-        {role === "manager" && (
+        <h1 className="text-3xl font-bold text-amber-800">재고 관리</h1>
+        {roleCode === "MA" && (
           <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> 새 그룹 추가
+            <PlusCircle className="mr-2 h-4 w-4" /> 새 카테고리 추가
           </Button>
         )}
       </div>
@@ -100,37 +101,40 @@ export default function StocksPage() {
         {mockStocks.map((stock) => {
           const placeholderImageUrl = `https://dummyimage.com/300x200/f5f5f4/a1887f.png&text=${encodeURIComponent(stock.name)}`;
           const finalImageUrl = stock.image || placeholderImageUrl;
+
           return (
-            <Card key={stock.id} className="group relative overflow-hidden">
-              <CardHeader className="p-0">
-                <div className="aspect-video bg-stone-100">
-                  <img
-                    src={finalImageUrl}
-                    alt={stock.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <CardTitle className="text-xl text-amber-800">
-                  {stock.name}
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  {stock.description}
-                </CardDescription>
-              </CardContent>
-              {role === "manager" && (
-                <div className="absolute top-2 right-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleEditClick(stock)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </Card>
+            <Link to={`/dashboard/stocks/${stock.id}/items`} key={stock.id}>
+              <Card key={stock.id} className="group relative overflow-hidden">
+                <CardHeader className="p-0">
+                  <div className="aspect-video bg-stone-100">
+                    <img
+                      src={finalImageUrl}
+                      alt={stock.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <CardTitle className="text-xl text-amber-800">
+                    {stock.name}
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {stock.description}
+                  </CardDescription>
+                </CardContent>
+                {roleCode === "MA" && (
+                  <div className="absolute top-2 right-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEditClick(stock)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </Link>
           );
         })}
       </div>

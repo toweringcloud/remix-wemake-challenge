@@ -1,10 +1,17 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import {
+  BookMarked,
+  Archive,
+  LogOut,
+  CookingPot,
+  ShoppingCart,
+} from "lucide-react";
+
 import { useRoleStore } from "~/stores/role.store";
 import { useMenuStore } from "~/stores/menu.store";
-import { BookMarked, Archive, LogOut } from "lucide-react";
 
 export default function Sidebar() {
-  const { role, logout } = useRoleStore();
+  const { roleCode, logout } = useRoleStore();
   const { isSidebarOpen, closeSidebar } = useMenuStore();
   const navigate = useNavigate();
 
@@ -54,6 +61,30 @@ export default function Sidebar() {
           <h2 className="text-xl font-bold text-center text-amber-800">메뉴</h2>
         </div>
         <nav className="flex-1 p-4 space-y-4">
+          {roleCode === "SA" ? (
+            <NavLink
+              to="/dashboard/cafe"
+              className={({ isActive }) =>
+                `${navLinkClass} ${getActiveClass(isActive)}`
+              }
+              onClick={closeSidebar}
+            >
+              <BookMarked size={28} />
+              <span className="text-xs font-semibold">카페</span>
+            </NavLink>
+          ) : null}
+          {roleCode === "SA" || roleCode === "MA" ? (
+            <NavLink
+              to="/dashboard/products"
+              className={({ isActive }) =>
+                `${navLinkClass} ${getActiveClass(isActive)}`
+              }
+              onClick={closeSidebar}
+            >
+              <ShoppingCart size={28} />
+              <span className="text-xs font-semibold">상품</span>
+            </NavLink>
+          ) : null}
           <NavLink
             to="/dashboard/recipes"
             className={({ isActive }) =>
@@ -61,22 +92,19 @@ export default function Sidebar() {
             }
             onClick={closeSidebar}
           >
-            <BookMarked size={28} />
+            <CookingPot size={28} />
             <span className="text-xs font-semibold">레시피</span>
           </NavLink>
-
-          {role === "manager" && (
-            <NavLink
-              to="/dashboard/items"
-              className={({ isActive }) =>
-                `${navLinkClass} ${getActiveClass(isActive)}`
-              }
-              onClick={closeSidebar}
-            >
-              <Archive size={28} />
-              <span className="text-xs font-semibold">재고</span>
-            </NavLink>
-          )}
+          <NavLink
+            to="/dashboard/stocks"
+            className={({ isActive }) =>
+              `${navLinkClass} ${getActiveClass(isActive)}`
+            }
+            onClick={closeSidebar}
+          >
+            <Archive size={28} />
+            <span className="text-xs font-semibold">재고</span>
+          </NavLink>
         </nav>
 
         {/* ✅ 로그아웃 버튼 추가 */}

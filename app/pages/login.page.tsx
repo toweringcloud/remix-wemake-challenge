@@ -27,8 +27,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
   console.log("users", users);
 
   const exists = users && users.length > 0 ? true : false;
-  if (exists) {
-    return redirect("/dashboard?login=success&role=" + roleName);
+  if (exists && users && users[0]) {
+    return redirect(
+      `/dashboard?login=success&roleCode=${roleCode}&cafeId=${users[0].cafe_id}`
+    );
   } else {
     return {
       message: "입장코드 정보가 올바르지 않습니다!",

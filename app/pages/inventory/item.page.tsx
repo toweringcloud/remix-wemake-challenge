@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useRoleStore } from "~/stores/role.store";
 import { Save, Trash2, X } from "lucide-react";
 import { inventoryData } from "~/data/inventory.data";
-import type { Route } from "./+types/inventory.page";
+import type { Route } from "./+types/item.page";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Inventory | Caferium" },
@@ -14,8 +13,7 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export default function ItemPage() {
-  const navigate = useNavigate();
-  const { role } = useRoleStore();
+  const { roleCode } = useRoleStore();
 
   const [items, setItems] = useState(inventoryData);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -81,24 +79,12 @@ export default function ItemPage() {
     setEditingId(null);
   };
 
-  // ✅ 권한 확인 로직
-  useEffect(() => {
-    if (role !== "manager") {
-      navigate("/dashboard");
-    }
-  }, [role, navigate]);
-
-  // ✅ 매니저가 아닐 경우, 리다이렉트 되기 전까지 로딩 또는 null을 반환
-  if (role !== "manager") {
-    return null;
-  }
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">재고 관리</h1>
         {/* ✅ isAdding 상태가 아닐 때만 '새 품목 추가' 버튼이 보이도록 설정 */}
-        {!isAdding && (
+        {roleCode === "MA" && !isAdding && (
           <button
             onClick={handleAddNewItem}
             className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700"
@@ -165,13 +151,15 @@ export default function ItemPage() {
                     >
                       <Save size={20} />
                     </button>
-                    <button
-                      title="삭제"
-                      onClick={handleCancelAddItem}
-                      className="text-red-500 hover:text-red-700 p-1"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    {roleCode === "MA" && (
+                      <button
+                        title="삭제"
+                        onClick={handleCancelAddItem}
+                        className="text-red-500 hover:text-red-700 p-1"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -236,12 +224,14 @@ export default function ItemPage() {
                       >
                         <Save size={20} />
                       </button>
-                      <button
-                        title="삭제"
-                        className="text-sm bg-red-100 text-red-700 p-2 rounded hover:bg-red-200"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                      {roleCode === "MA" && (
+                        <button
+                          title="삭제"
+                          className="text-sm bg-red-100 text-red-700 p-2 rounded hover:bg-red-200"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </td>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRoleStore } from "~/stores/role.store";
 import {
   Card,
@@ -19,7 +19,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Pencil } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 // ✅ 1. 상품 데이터의 타입을 명확하게 정의합니다.
 type Product = {
@@ -59,7 +59,8 @@ const mockProducts: Product[] = [
 ];
 
 export default function ProductsPage() {
-  const { role } = useRoleStore();
+  const navigate = useNavigate();
+  const { roleCode } = useRoleStore();
 
   // ✅ 2. useState에 Product 타입 또는 null을 가질 수 있다고 명시합니다.
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -86,49 +87,63 @@ export default function ProductsPage() {
     }
   };
 
+  // ✅ 운영자 권한 확인
+  useEffect(() => {
+    if (roleCode !== "SA" && roleCode !== "MA") {
+      alert("접근 권한이 없습니다.");
+      navigate("/dashboard");
+    }
+  }, [roleCode, navigate]);
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-amber-800">
-          상품(메뉴 그룹) 관리
-        </h1>
+        <h1 className="text-3xl font-bold text-amber-800">상품 관리</h1>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {mockProducts.map((product) => (
-          <Link to={`/dashboard/products/${product.id}/menus`} key={product.id}>
-            <Card className="group relative overflow-hidden h-full">
-              <CardHeader className="p-0">
-                <div className="aspect-video bg-stone-100">
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <CardTitle className="text-xl text-amber-800">
-                  {product.name}
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  {product.description}
-                </CardDescription>
-              </CardContent>
-              {role === "manager" && (
-                <div className="absolute top-2 right-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleEditClick(product)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </Card>
-          </Link>
-        ))}
+        {mockProducts.map((product) => {
+          const placeholderImageUrl = `https://dummyimage.com/300x200/f5f5f4/a1887f.png&text=${encodeURIComponent(product.name)}`;
+          const finalImageUrl = product.imageUrl || placeholderImageUrl;
+
+          return (
+            <Link
+              to={`/dashboard/products/${product.id}/menus`}
+              key={product.id}
+            >
+              <Card className="group relative overflow-hidden h-full">
+                <CardHeader className="p-0">
+                  <div className="aspect-video bg-stone-100">
+                    <img
+                      src={finalImageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <CardTitle className="text-xl text-amber-800">
+                    {product.name}
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {product.description}
+                  </CardDescription>
+                </CardContent>
+                {roleCode === "SA" && (
+                  <div className="absolute top-2 right-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEditClick(product)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
