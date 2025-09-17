@@ -6,6 +6,9 @@ export default [
     index("pages/home.page.tsx"),
     route("login", "pages/login.page.tsx"),
 
+    // Private APIs
+    route("apis/cafe/update-ments", "pages/cafe/cafe-ments.page.tsx"),
+
     // 대시보드 레이아웃
     route("dashboard", "layouts/dashboard.layout.tsx", [
       // 대시보드

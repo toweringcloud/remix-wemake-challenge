@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRoleStore } from "../../stores/role.store";
+
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -12,6 +12,7 @@ import {
   CardTitle,
   CardDescription,
 } from "~/components/ui/card";
+import { useRoleStore } from "~/stores/role.store";
 
 export default function CafeEditPage() {
   const navigate = useNavigate();

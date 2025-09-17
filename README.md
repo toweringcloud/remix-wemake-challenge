@@ -77,7 +77,7 @@ $ bunx --bun shadcn@latest add button
 √ Checking registry.
 √ Installing dependencies.
 √ Created 1 file:
-  - app\components\ui\dialog.tsx
+  - app\components\ui\button.tsx
 ```
 
 ### launch
@@ -97,5 +97,5 @@ $ react-router dev
 ```sh
 $ bun run build
 $ docker build -t my-app .
-$ docker run -p 3000:3000 my-app
+$ docker run -p 9000:3000 my-app
 ```

@@ -65,6 +65,13 @@ export const users = pgTable(
           as: "permissive",
           using: sql`${currentUserCafeId} = ${table.cafeId}`,
         }),
+        // ✅ INSERT 정책: 매니저는 자신이 속한 카페에만 새로운 사용자를 추가할 수 있습니다.
+        "insert-policy": pgPolicy("users-insert-policy", {
+          for: "insert",
+          to: "authenticated",
+          as: "permissive",
+          withCheck: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
+        }),
         // ✅ UPDATE 정책: 로그인한 사용자는 자신의 정보만 수정할 수 있습니다.
         "update-policy": pgPolicy("users-update-policy", {
           for: "update",
@@ -72,13 +79,6 @@ export const users = pgTable(
           as: "permissive",
           using: sql`auth.uid() = ${table.id}`,
           withCheck: sql`auth.uid() = ${table.id}`,
-        }),
-        // ✅ INSERT 정책: 매니저는 자신이 속한 카페에만 새로운 사용자를 추가할 수 있습니다.
-        "insert-policy": pgPolicy("users-insert-policy", {
-          for: "insert",
-          to: "authenticated",
-          as: "permissive",
-          withCheck: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
         }),
         // ✅ DELETE 정책: 매니저는 자신이 속한 카페의 사용자만 삭제할 수 있습니다.
         "delete-policy": pgPolicy("users-delete-policy", {
@@ -119,25 +119,18 @@ export const products = pgTable(
       },
       {
         // ✅ SELECT 정책: 자신이 속한 카페의 상품만 조회할 수 있습니다.
-        "select-policy": pgPolicy("products-select-policy", {
+        "query-policy": pgPolicy("products-select-policy", {
           for: "select",
           to: "authenticated",
           as: "permissive",
           using: sql`${currentUserCafeId} = ${table.cafeId}`,
         }),
-        // ✅ INSERT 정책: 매니저만 자신이 속한 카페에 상품을 추가할 수 있습니다.
-        "insert-policy": pgPolicy("products-insert-policy", {
-          for: "insert",
+        // ✅ INSERT/UPDATE/DELETE 정책: 매니저만 자신이 속한 카페에 상품을 추가/수정/삭제할 수 있습니다.
+        "mutation-policy": pgPolicy("products-insert-update-delete-policy", {
+          for: "all",
           to: "authenticated",
           as: "permissive",
           withCheck: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
-        }),
-        // ✅ UPDATE/DELETE 정책: 매니저만 자신이 속한 카페의 상품을 수정/삭제할 수 있습니다.
-        "update-delete-policy": pgPolicy("products-update-delete-policy", {
-          for: "all", // UPDATE와 DELETE 모두에 적용
-          to: "authenticated",
-          as: "permissive",
-          using: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
         }),
       },
     ];

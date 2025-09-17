@@ -95,10 +95,12 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
           {loaderData?.headline || "레시피와 재고를 한 곳에서 관리하세요!"}
         </h1>
         <p className="mt-4 text-md md:text-lg text-gray-600">
-          {loaderData?.body ||
-            "복잡한 메뉴 관리와 재고 계산은 이제 그만. 똑똑한 운영에만 집중하세요."}
+          {loaderData?.body
+            ? loaderData?.body.split(", ")[0]
+            : "복잡한 메뉴 관리와 재고 계산은 이제 그만. 똑똑한 카페 운영에만 집중하세요."}
         </p>
         <button
+          type="button"
           onClick={handleStart}
           className="mt-8 inline-flex items-center justify-center bg-amber-600 text-white font-bold text-3xl py-3 px-8 rounded-lg hover:bg-amber-700 transition-transform hover:scale-105"
         >

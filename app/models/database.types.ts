@@ -21,9 +21,9 @@ export type Database = {
           description: string | null
           headline: string | null
           id: string
+          images_urls: string[] | null
           logo_url: string | null
           name: string
-          photos_urls: string[] | null
           updated_at: string | null
           video_url: string | null
         }
@@ -33,9 +33,9 @@ export type Database = {
           description?: string | null
           headline?: string | null
           id?: string
+          images_urls?: string[] | null
           logo_url?: string | null
           name: string
-          photos_urls?: string[] | null
           updated_at?: string | null
           video_url?: string | null
         }
@@ -45,9 +45,9 @@ export type Database = {
           description?: string | null
           headline?: string | null
           id?: string
+          images_urls?: string[] | null
           logo_url?: string | null
           name?: string
-          photos_urls?: string[] | null
           updated_at?: string | null
           video_url?: string | null
         }
@@ -57,20 +57,20 @@ export type Database = {
         Row: {
           cafe_id: string
           id: number
+          image_url: string | null
           name: string
-          photo_url: string | null
         }
         Insert: {
           cafe_id: string
           id?: never
+          image_url?: string | null
           name: string
-          photo_url?: string | null
         }
         Update: {
           cafe_id?: string
           id?: never
+          image_url?: string | null
           name?: string
-          photo_url?: string | null
         }
         Relationships: [
           {
@@ -88,8 +88,9 @@ export type Database = {
           count: number
           created_at: string | null
           id: number
+          image_url: string | null
           name: string
-          photo_url: string | null
+          stock_id: number
           unit: string | null
           updated_at: string | null
         }
@@ -98,8 +99,9 @@ export type Database = {
           count?: number
           created_at?: string | null
           id?: never
+          image_url?: string | null
           name: string
-          photo_url?: string | null
+          stock_id: number
           unit?: string | null
           updated_at?: string | null
         }
@@ -108,8 +110,9 @@ export type Database = {
           count?: number
           created_at?: string | null
           id?: never
+          image_url?: string | null
           name?: string
-          photo_url?: string | null
+          stock_id?: number
           unit?: string | null
           updated_at?: string | null
         }
@@ -121,39 +124,97 @@ export type Database = {
             referencedRelation: "cafes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "items_stock_id_stocks_id_fk"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
         ]
       }
       menus: {
         Row: {
           cafe_id: string
-          category: string
           created_at: string | null
           id: number
+          image_url: string | null
+          is_active: boolean | null
           is_hot: boolean
           name: string
+          price: number
+          product_id: number
+          stock: number
           updated_at: string | null
         }
         Insert: {
           cafe_id: string
-          category: string
           created_at?: string | null
           id?: never
+          image_url?: string | null
+          is_active?: boolean | null
           is_hot?: boolean
           name: string
+          price?: number
+          product_id: number
+          stock?: number
           updated_at?: string | null
         }
         Update: {
           cafe_id?: string
-          category?: string
           created_at?: string | null
           id?: never
+          image_url?: string | null
+          is_active?: boolean | null
           is_hot?: boolean
           name?: string
+          price?: number
+          product_id?: number
+          stock?: number
           updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "menus_cafe_id_cafes_id_fk"
+            columns: ["cafe_id"]
+            isOneToOne: false
+            referencedRelation: "cafes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menus_product_id_products_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          cafe_id: string
+          description: string | null
+          id: number
+          image_url: string | null
+          name: string
+        }
+        Insert: {
+          cafe_id: string
+          description?: string | null
+          id?: never
+          image_url?: string | null
+          name: string
+        }
+        Update: {
+          cafe_id?: string
+          description?: string | null
+          id?: never
+          image_url?: string | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_cafe_id_cafes_id_fk"
             columns: ["cafe_id"]
             isOneToOne: false
             referencedRelation: "cafes"
@@ -186,11 +247,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recipe_ingredients_recipe_id_recipes_id_fk"
+            foreignKeyName: "recipe_ingredients_recipe_id_recipes_menu_id_fk"
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
-            referencedColumns: ["id"]
+            referencedColumns: ["menu_id"]
           },
         ]
       }
@@ -199,7 +260,6 @@ export type Database = {
           cafe_id: string
           created_at: string | null
           description: string | null
-          id: number
           menu_id: number
           name: string
           steps: string[]
@@ -210,7 +270,6 @@ export type Database = {
           cafe_id: string
           created_at?: string | null
           description?: string | null
-          id?: never
           menu_id: number
           name: string
           steps: string[]
@@ -221,7 +280,6 @@ export type Database = {
           cafe_id?: string
           created_at?: string | null
           description?: string | null
-          id?: never
           menu_id?: number
           name?: string
           steps?: string[]
@@ -239,8 +297,40 @@ export type Database = {
           {
             foreignKeyName: "recipes_menu_id_menus_id_fk"
             columns: ["menu_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stocks: {
+        Row: {
+          cafe_id: string
+          description: string | null
+          id: number
+          image_url: string | null
+          name: string
+        }
+        Insert: {
+          cafe_id: string
+          description?: string | null
+          id?: never
+          image_url?: string | null
+          name: string
+        }
+        Update: {
+          cafe_id?: string
+          description?: string | null
+          id?: never
+          image_url?: string | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stocks_cafe_id_cafes_id_fk"
+            columns: ["cafe_id"]
+            isOneToOne: false
+            referencedRelation: "cafes"
             referencedColumns: ["id"]
           },
         ]
@@ -294,6 +384,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      role: "SA" | "MA" | "BA"
       user_role: "SA" | "MA" | "BA"
     }
     CompositeTypes: {
@@ -422,6 +513,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      role: ["SA", "MA", "BA"],
       user_role: ["SA", "MA", "BA"],
     },
   },
