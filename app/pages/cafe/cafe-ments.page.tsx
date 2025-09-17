@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import createClient from "~/utils/supabase.client";
 import { updateCafeMents } from "~/apis/cafe.mutation";
+import type { Route } from "./+types/cafe-ments.page";
 
 const openai = new OpenAI();
 
@@ -16,7 +17,16 @@ const ResponseSchema = z.object({
   potato: z.array(MessageSchema),
 });
 
-export const loader = async () => {
+export const action = async ({ request }: Route.ActionArgs) => {
+  // 보안: POST 메서드와 커스텀 헤더로 간단한 인증 처리
+  if (request.method !== "POST") {
+    return new Response(null, { status: 404 });
+  }
+  const header = request.headers.get("X-POTATO");
+  if (!header || header !== "X-TOMATO") {
+    return new Response(null, { status: 404 });
+  }
+
   // 1. Zod 스키마를 JSON 스키마로 변환합니다.
   const schema = zodToJsonSchema(ResponseSchema, "ResponseSchema");
 

@@ -99,3 +99,17 @@ $ bun run build
 $ docker build -t my-app .
 $ docker run -p 9000:3000 my-app
 ```
+
+- run tunnel client
+
+```sh
+$ cloudflared tunnel --url http://localhost:5173
+2025-09-17T17:21:08Z INF Requesting new quick Tunnel on trycloudflare.com...
+2025-09-17T17:21:11Z INF +--------------------------------------------------------------------------------------------+
+2025-09-17T17:21:11Z INF |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+2025-09-17T17:21:11Z INF |  https://latter-optimization-roots-tested.trycloudflare.com
+2025-09-17T17:21:11Z INF +--------------------------------------------------------------------------------------------+
+2025-09-17T17:21:11Z INF Cannot determine default configuration path. No file [config.yml config.yaml] in [~/.cloudflared ~/.cloudflare-warp ~/cloudflare-warp]
+2025-09-17T17:21:11Z INF Version 2025.8.1 (Checksum b5d598b00cc3a28cabc5812d9f762819334614bae452db4e7f23eefe7b081556)
+2025-09-17T17:21:11Z INF GOOS: windows, GOVersion: go1.24.2, GoArch: amd64
+```
