@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import createClient from "~/utils/supabase.client";
 import { updateCafeMents } from "~/apis/cafe.mutation";
-import type { Route } from "./+types/cafe-ments.page";
+import type { Route } from "./+types/update-cafe-ments";
 
 const openai = new OpenAI();
 
