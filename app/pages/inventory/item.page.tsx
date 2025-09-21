@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useRoleStore } from "~/stores/role.store";
-import { Save, Trash2, X } from "lucide-react";
-import { inventoryData } from "~/data/inventory.data";
+import { Save, Trash2 } from "lucide-react";
+
 import type { Route } from "./+types/item.page";
+import { useRoleStore } from "~/stores/user.store";
+import { inventoryData } from "~/data/inventory.data";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Inventory | Caferium" },

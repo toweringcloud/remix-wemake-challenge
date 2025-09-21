@@ -1,22 +1,43 @@
-// import { useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Outlet, useLoaderData } from "react-router-dom";
 
+import type { Route } from "./+types/dashboard.layout";
 import Sidebar from "~/components/layout/sidebar";
-// import { useRoleStore } from "~/stores/role.store";
+import { useCafeStore } from "~/stores/cafe.store";
+import { parseCookie } from "~/utils/cookie.server";
+import { createClient } from "~/utils/supabase.server";
+
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  try {
+    const cookies = parseCookie(request.headers.get("Cookie"));
+    const session = JSON.parse(
+      Buffer.from(cookies.session || "", "base64").toString()
+    );
+    if (!session?.cafeId) return { cafe: null };
+
+    const { supabase } = createClient(request);
+    const { data: cafe } = await supabase
+      .from("cafes")
+      .select("name")
+      .eq("id", session.cafeId)
+      .single();
+    return { cafe };
+  } catch (error) {
+    return { cafe: null }; // ✅ json() 없이 객체 반환
+  }
+};
 
 export default function DashboardLayout() {
-  // const navigate = useNavigate();
-  // const { isLoggedIn } = useRoleStore();
+  // const { cafe } = useLoaderData<typeof loader>();
+  const { cafe } = useLoaderData() as { cafe: { name: string } | null };
+  const { setName } = useCafeStore();
 
-  // useEffect(() => {
-  //   if (!isLoggedIn) {
-  //     navigate("/login");
-  //   }
-  // }, [isLoggedIn, navigate]);
-
-  // if (!isLoggedIn) {
-  //   return null;
-  // }
+  // ✅ loader 데이터가 변경될 때마다 스토어의 카페 이름을 업데이트
+  useEffect(() => {
+    if (cafe?.name) {
+      setName(cafe.name);
+    }
+  }, [cafe, setName]);
 
   return (
     <div className="flex h-full">

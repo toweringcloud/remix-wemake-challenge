@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Form, Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Menu,
   Coffee,
@@ -9,14 +9,16 @@ import {
   ShoppingCart,
 } from "lucide-react";
 
-import { useRoleStore } from "~/stores/role.store";
+import { useCafeStore } from "~/stores/cafe.store";
 import { useMenuStore } from "~/stores/menu.store";
+import { useRoleStore } from "~/stores/user.store";
 
 export default function Header() {
-  const { isLoggedIn, roleCode, cafeName, logout } = useRoleStore();
+  const { isLoggedIn, roleCode, logout } = useRoleStore();
+  const { name: cafeName } = useCafeStore();
   const { toggleSidebar } = useMenuStore();
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -47,7 +49,7 @@ export default function Header() {
             className="flex items-center gap-2 text-xl font-bold text-amber-800"
           >
             <Coffee className="text-amber-700" />
-            <span>{cafeName}</span>
+            <span>{cafeName || "카페리움"}</span>
           </Link>
         </div>
 
@@ -74,13 +76,16 @@ export default function Header() {
                 <Archive size={18} />
                 <span>{"재고"}</span>
               </NavLink>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-amber-700 hover:bg-amber-100 font-semibold py-2 px-3 rounded-md transition-colors"
-              >
-                <LogOut size={16} />
-                <span>로그아웃</span>
-              </button>
+              <Form action="/logout" method="post">
+                <button
+                  type="submit"
+                  // onClick={handleLogout}
+                  className="flex items-center gap-2 text-amber-700 hover:bg-amber-100 font-semibold py-2 px-3 rounded-md transition-colors"
+                >
+                  <LogOut size={16} />
+                  <span>로그아웃</span>
+                </button>
+              </Form>
             </>
           )}
         </nav>

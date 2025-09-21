@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { useRoleStore } from "../../stores/role.store";
+import { Link } from "react-router";
+import { Pencil, PlusCircle } from "lucide-react";
+
+import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -7,7 +10,6 @@ import {
   CardTitle,
   CardDescription,
 } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +20,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Pencil, PlusCircle } from "lucide-react";
-import { Link } from "react-router";
+import { useRoleStore } from "~/stores/user.store";
 
 // ✅ 1. 재고 그룹(Stock) 데이터의 타입을 명확하게 정의합니다.
 type Stock = {

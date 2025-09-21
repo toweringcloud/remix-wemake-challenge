@@ -1,10 +1,10 @@
 import OpenAI from "openai";
-import { zodToJsonSchema } from "zod-to-json-schema";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
-import createClient from "~/utils/supabase.client";
-import { updateCafeMents } from "~/apis/cafe.mutation";
 import type { Route } from "./+types/update-cafe-ments";
+import { updateCafeMents } from "~/apis/cafe.mutation";
+import createClient from "~/utils/supabase.client";
 
 const openai = new OpenAI();
 

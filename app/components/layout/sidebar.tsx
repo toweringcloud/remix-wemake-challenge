@@ -7,7 +7,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 
-import { useRoleStore } from "~/stores/role.store";
+import { useRoleStore } from "~/stores/user.store";
 import { useMenuStore } from "~/stores/menu.store";
 
 export default function Sidebar() {

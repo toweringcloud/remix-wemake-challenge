@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Autoplay from "embla-carousel-autoplay";
 // import { DateTime } from "luxon";
 
+import type { Route } from "./+types/home.page";
 import { PulsatingButton } from "~/components/magicui/pulsating-button";
 import {
   Carousel,
@@ -11,17 +12,15 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "~/components/ui/carousel";
-// import { getCafeData } from "~/queries/cafe.queries";
-import { useRoleStore } from "~/stores/role.store";
+import { useRoleStore } from "~/stores/user.store";
 import { createClient } from "~/utils/supabase.server";
-import type { Route } from "./+types/home.page";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Home | Caferium" },
   { name: "description", content: "introduce about the cafe" },
 ];
 
-export async function loader({ request }: Route.LoaderArgs) {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   // const cafes = await getCafeData({
   //   request,
   //   startDate: DateTime.now().startOf("day"),
@@ -37,7 +36,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     return cafes[0];
   }
   return null;
-}
+};
 
 export default function HomePage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();

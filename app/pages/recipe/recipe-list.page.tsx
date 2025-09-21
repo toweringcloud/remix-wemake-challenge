@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { useRoleStore } from "~/stores/role.store";
-import { recipesData } from "~/data/recipes.data";
+import { Pencil, Trash2 } from "lucide-react";
+
 import type { Route } from "./+types/recipe-list.page";
 import { RecipeCard } from "~/components/recipe-card";
-import { Pencil, Trash2 } from "lucide-react";
+import { useRoleStore } from "~/stores/user.store";
+import { recipesData } from "~/data/recipes.data";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Recipe List | Caferium" },

@@ -1,9 +1,10 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useRoleStore } from "~/stores/role.store";
-import { recipesData } from "~/data/recipes.data";
+
 import type { Route } from "./+types/recipe-detail.page";
 import { PlaceholderImage } from "~/components/common/placeholder-image";
-import { useEffect, useState } from "react";
+import { useRoleStore } from "~/stores/user.store";
+import { recipesData } from "~/data/recipes.data";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Recipe Detail | Caferium" },

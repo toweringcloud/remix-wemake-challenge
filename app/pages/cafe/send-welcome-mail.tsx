@@ -1,9 +1,10 @@
 import { Resend } from "resend";
+
+import type { Route } from "./+types/send-welcome-mail";
 import {
   WelcomeEmail,
   type WelcomeEmailProps,
 } from "react-email-starter/emails/welcome-to-caferium";
-import type { Route } from "./+types/send-welcome-mail";
 
 const client = new Resend(process.env.RESEND_API_KEY);
 
@@ -48,15 +49,15 @@ const welcomeMents: WelcomeEmailProps = {
   links: [
     {
       title: "사용 가이드 보기",
-      href: "https://caferium.toweirngcloud.dev/guide",
+      href: "https://caferium.toweringcloud.dev/guide",
     },
     {
       title: "자주 묻는 질문 (FAQ)",
-      href: "https://caferium.toweirngcloud.dev/faq",
+      href: "https://caferium.toweringcloud.dev/faq",
     },
     {
       title: "문의하기",
-      href: "mailto:caferium@mail.toweirngcloud.dev",
+      href: "mailto:caferium@mail.toweringcloud.dev",
     },
   ],
 };

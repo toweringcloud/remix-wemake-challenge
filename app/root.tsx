@@ -13,7 +13,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { cn } from "./utils/tailwindcss.util";
 import { createClient } from "./utils/supabase.server";
-import { useRoleStore } from "./stores/role.store";
+import { useRoleStore } from "./stores/user.store";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

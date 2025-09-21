@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Form, redirect, useNavigation } from "react-router-dom";
 import { Coffee, UserRound, Briefcase, LoaderCircle } from "lucide-react";
 
-import { createClient } from "~/utils/supabase.server";
 import type { Route } from "./+types/login.page";
+import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Login | Caferium" },
@@ -24,13 +24,33 @@ export const action = async ({ request }: Route.ActionArgs) => {
     .select()
     .eq("role", roleCode as string)
     .eq("auth_code", authCode as string);
-  console.log("users", users);
+  console.log("login.users", users);
 
-  const exists = users && users.length > 0 ? true : false;
-  if (exists && users && users[0]) {
-    return redirect(
-      `/dashboard?login=success&roleCode=${roleCode}&cafeId=${users[0].cafe_id}`
+  if (users && users[0]) {
+    const user = users[0];
+    const sessionData = {
+      cafeId: user.cafe_id,
+      roleCode: user.role,
+    };
+    console.log("login.session", sessionData);
+
+    // ✅ 리디렉션 응답을 위한 헤더 생성
+    const headers = new Headers();
+
+    // ✅ HttpOnly 쿠키 설정
+    // JSON.stringify로 데이터를 문자열로 만들고, Base64로 인코딩하여 안전하게 전달
+    const cookieValue = Buffer.from(JSON.stringify(sessionData)).toString(
+      "base64"
     );
+
+    // ✅ 쿠키 정보는 7일간 유효
+    headers.append(
+      "Set-Cookie",
+      `session=${cookieValue}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`
+    );
+
+    // ✅ 헤더와 함께 리디렉션
+    return redirect("/dashboard", { headers });
   } else {
     return {
       message: "입장코드 정보가 올바르지 않습니다!",

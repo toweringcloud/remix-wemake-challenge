@@ -1,6 +1,6 @@
 # remix-wemake-challenge
 
-senior assistant web app using bun + react v19 + react-router v7 framework + tailwindcss v4 + shadcn/ui + zustand + zod + drizzle + postgresql
+shop keeper fullstack web app using bun + react v19 + react-router v7 framework + tailwindcss v4 + shadcn/ui + zustand + zod + drizzle + postgresql
 
 ## how to run
 

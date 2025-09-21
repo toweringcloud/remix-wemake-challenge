@@ -1,52 +1,39 @@
-import { useEffect } from "react";
-import type { LoaderFunction } from "react-router";
+import { type LoaderFunction } from "react-router";
 import { BookMarked, Archive, CookingPot, ShoppingCart } from "lucide-react";
 
 import type { Route } from "./+types/dashboard.page";
 import { FeatureCard } from "~/components/feature-card";
-import { useRoleStore } from "~/stores/role.store";
-import { createClient } from "~/utils/supabase.server";
+import { useRoleStore } from "~/stores/user.store";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Dashboard | Caferium" },
-  { name: "description", content: "select recipe or inventory menu" },
-];
+// ✅ loader 데이터의 타입을 미리 정의합니다.
+type DashboardLoaderData = {
+  cafe: { name: string } | null;
+};
 
-export const loader: LoaderFunction = async ({ request }) => {
-  const url = new URL(request.url);
-  if (url.searchParams.has("login")) {
-    const loginStatus = url.searchParams.get("login");
-    const roleCode = url.searchParams.get("roleCode");
-    const cafeId = url.searchParams.get("cafeId");
+// ✅ meta 함수가 loader 데이터를 인자로 받도록 수정
+export const meta: Route.MetaFunction = ({ matches }) => {
+  const dashboardLayoutMatch = matches.find(
+    (match: any) => match.pathname === "/dashboard" // 또는 레이아웃에 고유한 id가 있다면 id로 찾기
+  );
 
-    const { supabase } = createClient(request);
-    const { data: cafes } = await supabase
-      .from("cafes")
-      .select()
-      .eq("id", cafeId);
-    const cafeName = cafes![0].name;
-    console.log("cafes", cafes);
-    return { loginStatus, roleCode, cafeId, cafeName };
-  }
+  // ✅ as 키워드를 사용해 match.data의 타입을 명확하게 지정해줍니다.
+  const loaderData = dashboardLayoutMatch?.loaderData as
+    | DashboardLoaderData
+    | undefined;
+  const cafeName = loaderData?.cafe?.name || "Caferium";
+
+  return [
+    { title: `Dashboard | ${cafeName || "Caferium"}` },
+    { name: "description", content: "select recipe or inventory menu" },
+  ];
+};
+
+export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
+  console.log("dashboard.request", request);
 };
 
 export default function DashboardPage({ loaderData }: Route.ComponentProps) {
-  const { login } = useRoleStore();
-
-  useEffect(() => {
-    if (loaderData) {
-      const { loginStatus, roleCode, cafeId, cafeName } = loaderData;
-      if (loginStatus === "success" && roleCode && cafeId && cafeName) {
-        login(cafeName, cafeId, roleCode);
-        console.log(`로그인 성공! 역할: ${cafeName} | ${roleCode}`);
-
-        // 중요: 이 로직은 새로고침 시에는 실행되지 않으므로,
-        // 한 번 상태를 설정한 후 URL을 깔끔하게 정리하고 싶다면
-        window.history.replaceState(null, "", "/dashboard");
-      }
-    }
-  }, [loaderData, login]);
-
+  console.log("dashboard.request", loaderData);
   const { roleCode } = useRoleStore();
 
   return (
@@ -78,7 +65,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
         ) : null}
         {roleCode === "SA" || roleCode === "MA" ? (
           <FeatureCard
-            path="/dashboard/products"
+            path={`/dashboard/products`}
             name={"상품 관리"}
             description={
               <p className="text-stone-500">
@@ -95,7 +82,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
           />
         ) : null}
         <FeatureCard
-          path="/dashboard/recipes"
+          path={`/dashboard/recipes`}
           name={roleCode === "BA" ? "레시피" : "레시피 관리"}
           description={
             <p className="text-stone-500">
@@ -111,7 +98,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
           }
         />
         <FeatureCard
-          path="/dashboard/stocks"
+          path={`/dashboard/stocks`}
           name={roleCode === "BA" ? "재고" : "재고 관리"}
           description={
             <p className="text-stone-500">

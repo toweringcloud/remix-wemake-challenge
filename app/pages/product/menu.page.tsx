@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useRoleStore } from "../../stores/role.store";
+import { Pencil, PlusCircle } from "lucide-react";
+
+import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,7 +10,6 @@ import {
   CardTitle,
   CardDescription,
 } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import { Pencil, PlusCircle } from "lucide-react";
+import { useRoleStore } from "~/stores/user.store";
 
 // Menu 타입 정의 (기존과 동일)
 type Menu = {

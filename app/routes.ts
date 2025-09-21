@@ -5,10 +5,11 @@ export default [
   route("/", "layouts/root.layout.tsx", [
     index("pages/home.page.tsx"),
     route("login", "pages/login.page.tsx"),
+    route("logout", "pages/logout.page.tsx"),
 
     // Protected APIs
-    route("apis/cafe/update-ments", "pages/cafe/update-cafe-ments.tsx"),
-    route("apis/cafe/welcome-mail", "pages/cafe/send-welcome-mail.tsx"),
+    route("apis/send-welcome-mail", "pages/cafe/send-welcome-mail.tsx"),
+    route("apis/update-cafe-ments", "pages/cafe/update-cafe-ments.tsx"),
 
     // 대시보드 레이아웃
     route("dashboard", "layouts/dashboard.layout.tsx", [
