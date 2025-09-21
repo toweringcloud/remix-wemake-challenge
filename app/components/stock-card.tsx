@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
-interface RecipeCardProps {
+interface StockCardProps {
   id: string;
   name: string;
   description: string;
@@ -19,13 +19,13 @@ interface RecipeCardProps {
   action?: React.ReactNode;
 }
 
-export function RecipeCard({
+export function StockCard({
   id,
   name,
   description,
   imageUrl,
   action,
-}: RecipeCardProps) {
+}: StockCardProps) {
   const [hasLoadError, setHasLoadError] = useState(false);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function RecipeCard({
       <Card className="flex flex-col flex-grow overflow-hidden transition-all duration-300 bg-stone-50 border-amber-200 group-hover:shadow-xl group-hover:border-amber-400">
         <div className="flex">
           <div className="w-[30%] flex-shrink-0">
-            <Link to={`/dashboard/recipes/${id}`}>
+            <Link to={`/dashboard/stocks/${id}/items`}>
               {showFallback ? (
                 <PlaceholderImage text={name} />
               ) : (
@@ -54,7 +54,7 @@ export function RecipeCard({
           </div>
           <div className="flex flex-col w-[70%]">
             <CardHeader>
-              <Link to={`/dashboard/recipes/${id}`}>
+              <Link to={`/dashboard/stocks/${id}/items`}>
                 <CardTitle className="text-xl font-bold text-amber-800 hover:underline">
                   {name}
                 </CardTitle>

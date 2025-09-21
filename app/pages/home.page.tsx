@@ -17,7 +17,7 @@ import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Home | Caferium" },
-  { name: "description", content: "introduce about the cafe" },
+  { name: "description", content: "cafe home" },
 ];
 
 export const loader = async ({ request }: Route.LoaderArgs) => {

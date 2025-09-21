@@ -7,11 +7,12 @@ import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Login | Caferium" },
-  { name: "description", content: "sign-in with role and code" },
+  { name: "description", content: "sign-in" },
 ];
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
   const formData = await request.formData();
   const roleName = formData.get("role");
   const roleCode = roleName === "manager" ? "MA" : "BA";

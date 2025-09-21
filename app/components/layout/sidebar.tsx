@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { Form, NavLink, useNavigate } from "react-router-dom";
 import {
   BookMarked,
   Archive,
@@ -109,13 +109,15 @@ export default function Sidebar() {
 
         {/* ✅ 로그아웃 버튼 추가 */}
         <div className="mt-auto p-4 border-t border-amber-100">
-          <button
-            onClick={handleLogout}
-            className="flex flex-col items-center justify-center gap-1 w-full p-2 rounded-lg text-stone-500 hover:bg-stone-100"
-          >
-            <LogOut size={24} />
-            <span className="text-xs font-semibold">로그아웃</span>
-          </button>
+          <Form action="/logout" method="post">
+            <button
+              type="submit"
+              className="flex flex-col items-center justify-center gap-1 w-full p-2 rounded-lg text-stone-500 hover:bg-stone-100"
+            >
+              <LogOut size={24} />
+              <span className="text-xs font-semibold">로그아웃</span>
+            </button>
+          </Form>
         </div>
       </aside>
     </>

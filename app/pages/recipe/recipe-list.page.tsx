@@ -30,7 +30,7 @@ export default function RecipeListPage() {
         {/* 스토어에서 가져온 role 값으로 매니저 여부를 확인합니다. */}
         {roleCode === "MA" && (
           <Link to="/dashboard/recipes/new">
-            <button className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">
+            <button className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700">
               + 새 레시피 등록
             </button>
           </Link>
@@ -57,7 +57,7 @@ export default function RecipeListPage() {
                     수정
                   </Link>
                   <button
-                    onClick={() => handleDelete(recipe.name)}
+                    onClick={() => handleDelete(recipe.id)}
                     className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
                   >
                     <Trash2 size={14} />

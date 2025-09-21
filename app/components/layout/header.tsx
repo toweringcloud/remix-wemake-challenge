@@ -1,4 +1,4 @@
-import { Form, Link, NavLink, useNavigate } from "react-router-dom";
+import { Form, Link, NavLink } from "react-router-dom";
 import {
   Menu,
   Coffee,
@@ -14,15 +14,9 @@ import { useMenuStore } from "~/stores/menu.store";
 import { useRoleStore } from "~/stores/user.store";
 
 export default function Header() {
-  const { isLoggedIn, roleCode, logout } = useRoleStore();
+  const { isLoggedIn, roleCode } = useRoleStore();
   const { name: cafeName } = useCafeStore();
   const { toggleSidebar } = useMenuStore();
-
-  const navigate = useNavigate();
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-2 py-2 px-3 rounded-md transition-colors ${
@@ -79,7 +73,6 @@ export default function Header() {
               <Form action="/logout" method="post">
                 <button
                   type="submit"
-                  // onClick={handleLogout}
                   className="flex items-center gap-2 text-amber-700 hover:bg-amber-100 font-semibold py-2 px-3 rounded-md transition-colors"
                 >
                   <LogOut size={16} />

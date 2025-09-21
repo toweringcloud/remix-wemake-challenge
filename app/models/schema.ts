@@ -228,7 +228,7 @@ export const stocks = pgTable(
   }
 );
 
-// 📦 Item (재고 아이템)
+// 📦 Item (재고 아이템) = Ingredients (재료) + Supplies (소모품)
 export const items = pgTable("items", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 64 }).notNull(), // 예: 에스프레소 원두, 아몬드 시럽 등

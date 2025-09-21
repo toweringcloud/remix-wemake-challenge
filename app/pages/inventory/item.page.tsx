@@ -6,11 +6,8 @@ import { useRoleStore } from "~/stores/user.store";
 import { inventoryData } from "~/data/inventory.data";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "Inventory | Caferium" },
-  {
-    name: "description",
-    content: "manage the inventory items such as coffee beans, milk, syrup",
-  },
+  { title: "Items | Caferium" },
+  { name: "description", content: "item list" },
 ];
 
 export default function ItemPage() {
@@ -83,7 +80,7 @@ export default function ItemPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">재고 관리</h1>
+        <h1 className="text-3xl font-bold">재고 상세</h1>
         {/* ✅ isAdding 상태가 아닐 때만 '새 품목 추가' 버튼이 보이도록 설정 */}
         {roleCode === "MA" && !isAdding && (
           <button

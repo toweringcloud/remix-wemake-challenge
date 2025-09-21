@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"; // ✅ useState, useEffect import
 import { Link } from "react-router-dom";
+
 import { PlaceholderImage } from "~/components/common/placeholder-image";
 import {
   Card,
@@ -57,7 +58,7 @@ export function ProductCard({
           </div>
           <div className="flex flex-col w-[70%]">
             <CardHeader>
-              <Link to={`/dashboard/recipes/${id}`}>
+              <Link to={`/dashboard/products/${id}/menus`}>
                 <CardTitle className="text-xl font-bold text-amber-800 hover:underline">
                   {name}
                 </CardTitle>

@@ -12,7 +12,14 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+
+import type { Route } from "./+types/cafe.page";
 import { useRoleStore } from "~/stores/user.store";
+
+export const meta: Route.MetaFunction = () => [
+  { title: "Lounge | Caferium" },
+  { name: "description", content: "cafe lounge" },
+];
 
 export default function CafeEditPage() {
   const navigate = useNavigate();

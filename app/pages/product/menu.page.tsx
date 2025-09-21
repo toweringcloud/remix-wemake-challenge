@@ -1,15 +1,12 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
-import { Pencil, PlusCircle } from "lucide-react";
-
-import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "~/components/ui/card";
+  Form,
+  Link,
+  type LoaderFunction,
+  type LoaderFunctionArgs,
+} from "react-router-dom";
+import { Pencil, Trash2 } from "lucide-react";
+import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -20,154 +17,231 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import { useRoleStore } from "~/stores/user.store";
 
-// Menu 타입 정의 (기존과 동일)
+import type { Route } from "./+types/menu.page";
+import { MenuCard } from "~/components/menu-card";
+import { useRoleStore } from "~/stores/user.store";
+import { getCookieSession } from "~/utils/cookie.server";
+import { createClient } from "~/utils/supabase.server";
+import { DialogDescription } from "@radix-ui/react-dialog";
+
+export const meta: Route.MetaFunction = () => [
+  { title: "Menus | Caferium" },
+  { name: "description", content: "menu list" },
+];
+
+export const loader: LoaderFunction = async ({
+  request,
+  params,
+}: LoaderFunctionArgs) => {
+  const session = getCookieSession(request.headers.get("Cookie"));
+  if (!session) throw new Response("Unauthorized", { status: 401 });
+  if (!session?.cafeId) return { cafe: null };
+  const cafeId = session.cafeId;
+  console.log("menus.cafeId", cafeId);
+
+  const { productId } = params;
+  if (!productId) throw new Response("Not Found", { status: 404 });
+  console.log("menus.productId", cafeId);
+
+  const { supabase } = createClient(request);
+  const { data: menus } = await supabase
+    .from("menus")
+    .select("*, products(name)")
+    .eq("cafe_id", cafeId)
+    .eq("product_id", productId);
+  console.log("menus.R", menus);
+  return menus;
+};
+
+// 메뉴 타입 정의
 type Menu = {
   id: number;
   name: string;
   isHot: boolean;
   price: number;
   stock: number;
-  isActive: boolean;
-  image: string | null;
+  is_active: boolean;
+  image_url: string;
+  [key: string]: any;
 };
 
-// 임시 데이터에 이미지 URL 추가
-const mockMenus: Menu[] = [
-  {
-    id: 1,
-    name: "아메리카노",
-    isHot: true,
-    price: 4500,
-    stock: 100,
-    isActive: true,
-    image: "https://via.placeholder.com/150/6b4f4b/ffffff?text=Americano",
-  },
-  {
-    id: 2,
-    name: "아메리카노",
-    isHot: false,
-    price: 5000,
-    stock: 100,
-    isActive: true,
-    image: null,
-  },
-  {
-    id: 3,
-    name: "카페라떼",
-    isHot: true,
-    price: 5000,
-    stock: 80,
-    isActive: false,
-    image: "https://via.placeholder.com/150/c7a487/ffffff?text=Latte",
-  },
-];
-
-export default function MenusPage() {
+export default function MenusPage({ loaderData }: Route.ComponentProps) {
   const { roleCode } = useRoleStore();
-  const { productId } = useParams();
 
+  const [menus] = useState<Menu[]>(loaderData || []);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
 
-  // ... (기존 핸들러 함수들은 그대로 유지)
+  // 폼 입력 값 업데이트
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    if (selectedMenu) {
+      setSelectedMenu({
+        ...selectedMenu,
+        [id]: value,
+      });
+    }
+  };
+  const handleSwitchChange = (id: "isHot" | "isActive", checked: boolean) => {
+    // ...
+  };
+
+  // 메뉴 등록
+  const handleNewClick = () => {
+    setIsNewDialogOpen(true);
+  };
+  const handleSaveNew = () => {
+    console.log("menus.saveNew:", selectedMenu);
+    setIsNewDialogOpen(false);
+  };
+
+  // 메뉴 수정
   const handleEditClick = (menu: Menu) => {
     setSelectedMenu(menu);
     setIsEditDialogOpen(true);
   };
-
-  const handleSaveChanges = () => {
-    console.log("저장될 메뉴 정보:", selectedMenu);
+  const handleSaveEdit = () => {
+    console.log("products.saveEdit:", selectedMenu);
     setIsEditDialogOpen(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ...
-  };
-
-  const handleSwitchChange = (id: "isHot" | "isActive", checked: boolean) => {
-    // ...
+  // 메뉴 삭제
+  const handleDelete = (menuId: number) => {
+    alert(`메뉴(${menuId})를 삭제합니다.`);
   };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-amber-800">
-          {productId}번 상품의 메뉴 관리
+          메뉴 관리 ({menus[0].products.name})
         </h1>
+
         {roleCode === "MA" && (
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> 새 메뉴 추가
-          </Button>
+          <button
+            className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700"
+            onClick={() => handleNewClick()}
+          >
+            + 새 메뉴
+          </button>
         )}
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {mockMenus.map((menu) => {
-          const placeholderImageUrl = `https://dummyimage.com/300x200/f5f5f4/a1887f.png&text=${encodeURIComponent(menu.name)}`;
-          const finalImageUrl = menu.image || placeholderImageUrl;
-
-          return (
-            <Card
-              key={menu.id}
-              className={`group relative overflow-hidden ${!menu.isActive && "opacity-50"}`}
-            >
-              {/* ✅ 이미지 표시를 위한 CardHeader 추가 */}
-              <CardHeader className="p-0">
-                <div className="aspect-video bg-stone-100">
-                  <img
-                    src={finalImageUrl}
-                    alt={menu.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-amber-800">
-                      {menu.name}
-                    </CardTitle>
-                    <CardDescription
-                      className={menu.isHot ? "text-red-500" : "text-blue-500"}
-                    >
-                      {menu.isHot ? "HOT" : "ICE"}
-                    </CardDescription>
-                  </div>
-                  <p className="text-lg font-semibold">
-                    {menu.price.toLocaleString()}원
-                  </p>
-                </div>
-                <div className="text-sm text-stone-500 mt-2">
-                  <span>재고: {menu.stock}개</span>
-                  <span className="ml-2">|</span>
-                  <span className="ml-2">
-                    상태: {menu.isActive ? "판매중" : "품절"}
-                  </span>
-                </div>
-              </CardContent>
-              {roleCode === "MA" && (
-                <div className="absolute top-2 right-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {menus.map((menu) => (
+          <MenuCard
+            key={menu.id}
+            id={menu.id.toString()}
+            name={menu.name}
+            description={`[${menu.is_active ? "판매중" : "판매중지"}] 가격: ${menu.price}원, 재고: ${menu.stock}EA`}
+            imageUrl={menu.image_url}
+            action={
+              roleCode === "MA" && (
+                // 매니저일 경우: 수정/삭제 버튼
+                <div className="flex items-center gap-2 ml-auto -mb-2">
+                  <button
                     onClick={() => handleEditClick(menu)}
+                    className="flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors"
                   >
                     <Pencil className="h-4 w-4" />
-                  </Button>
+                    수정
+                  </button>
+                  <button
+                    onClick={() => handleDelete(menu.id)}
+                    className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    삭제
+                  </button>
                 </div>
-              )}
-            </Card>
-          );
-        })}
+              )
+            }
+          />
+        ))}
       </div>
+
+      {/* 메뉴 등록 팝업 */}
+      <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>"{selectedMenu?.name}" 메뉴 등록</DialogTitle>
+            <DialogDescription>
+              메뉴의 이름, 가격, 이미지를 등록합니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Form method="post">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  이름
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="메뉴 명"
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="price" className="text-right">
+                  가격
+                </Label>
+                <Input
+                  type="number"
+                  id="price"
+                  placeholder="가격"
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="stock" className="text-right">
+                  재고
+                </Label>
+                <Input
+                  type="number"
+                  id="stock"
+                  placeholder="재고"
+                  value={selectedMenu?.stock || 0}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="picture" className="text-right">
+                  이미지
+                </Label>
+                <Input id="picture" type="file" className="col-span-3" />
+              </div>
+            </Form>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsNewDialogOpen(false)}
+            >
+              취소
+            </Button>
+            <Button type="submit" onClick={handleSaveNew}>
+              저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 수정 Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>"{selectedMenu?.name}" 메뉴 수정</DialogTitle>
+            <DialogDescription>
+              메뉴의 이름, 가격, 이미지를 수정합니다.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -176,9 +250,11 @@ export default function MenusPage() {
               </Label>
               <Input
                 id="name"
+                placeholder="메뉴 명"
                 value={selectedMenu?.name || ""}
                 onChange={handleInputChange}
                 className="col-span-3"
+                autoComplete="off"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -186,11 +262,13 @@ export default function MenusPage() {
                 가격
               </Label>
               <Input
-                id="price"
                 type="number"
+                id="price"
+                placeholder="가격"
                 value={selectedMenu?.price || 0}
                 onChange={handleInputChange}
                 className="col-span-3"
+                autoComplete="off"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -198,11 +276,13 @@ export default function MenusPage() {
                 재고
               </Label>
               <Input
-                id="stock"
                 type="number"
+                id="stock"
+                placeholder="재고"
                 value={selectedMenu?.stock || 0}
                 onChange={handleInputChange}
                 className="col-span-3"
+                autoComplete="off"
               />
             </div>
             {/* ✅ 이미지 수정 필드 추가 */}
@@ -226,7 +306,7 @@ export default function MenusPage() {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="isActive"
-                  checked={selectedMenu?.isActive}
+                  checked={selectedMenu?.is_active}
                   onCheckedChange={(checked) =>
                     handleSwitchChange("isActive", checked)
                   }
@@ -243,8 +323,8 @@ export default function MenusPage() {
             >
               취소
             </Button>
-            <Button type="submit" onClick={handleSaveChanges}>
-              저장하기
+            <Button type="submit" onClick={handleSaveEdit}>
+              저장
             </Button>
           </DialogFooter>
         </DialogContent>

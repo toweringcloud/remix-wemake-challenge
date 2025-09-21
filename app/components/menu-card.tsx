@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
-interface RecipeCardProps {
+interface MenuCardProps {
   id: string;
   name: string;
   description: string;
@@ -19,13 +19,13 @@ interface RecipeCardProps {
   action?: React.ReactNode;
 }
 
-export function RecipeCard({
+export function MenuCard({
   id,
   name,
   description,
   imageUrl,
   action,
-}: RecipeCardProps) {
+}: MenuCardProps) {
   const [hasLoadError, setHasLoadError] = useState(false);
 
   useEffect(() => {

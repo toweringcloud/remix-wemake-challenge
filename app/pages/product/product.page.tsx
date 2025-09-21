@@ -21,13 +21,29 @@ import { Label } from "~/components/ui/label";
 import type { Route } from "./+types/product.page";
 import { ProductCard } from "~/components/product-card";
 import { useRoleStore } from "~/stores/user.store";
+import { getCookieSession } from "~/utils/cookie.server";
 import { createClient } from "~/utils/supabase.server";
-import { parseCookie } from "~/utils/cookie.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Products | Caferium" },
   { name: "description", content: "product list" },
 ];
+
+export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
+  const session = getCookieSession(request.headers.get("Cookie"));
+  if (!session) throw new Response("Unauthorized", { status: 401 });
+  if (!session?.cafeId) return { cafe: null };
+  const cafeId = session.cafeId;
+  console.log("products.cafeId", cafeId);
+
+  const { supabase } = createClient(request);
+  const { data: products } = await supabase
+    .from("products")
+    .select()
+    .eq("cafe_id", cafeId);
+  console.log("products.R", products);
+  return products;
+};
 
 export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
   await new Promise((resolve) => setTimeout(resolve, 500));
@@ -69,43 +85,24 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
   }
 };
 
-export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
-  const cookies = parseCookie(request.headers.get("Cookie"));
-  const session = JSON.parse(
-    Buffer.from(cookies.session || "", "base64").toString()
-  );
-  if (!session?.cafeId) return { cafe: null };
-
-  const cafeId = session.cafeId;
-  console.log("products.cafeId", cafeId);
-
-  const { supabase } = createClient(request);
-  const { data: products } = await supabase
-    .from("products")
-    .select()
-    .eq("cafe_id", cafeId);
-  console.log("products.R", products);
-  return products;
-};
-
 type Product = {
   id: number;
   name: string;
   description: string;
-  imageUrl: string;
+  image_url: string;
 };
 
 export default function ProductsPage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
-  const { cafeId, roleCode } = useRoleStore();
-  console.log("products.roleCode", roleCode);
-  console.log("products.R", loaderData);
+  const { roleCode } = useRoleStore();
+  console.log("products.loaderData", loaderData);
 
   const [products] = useState<Product[]>(loaderData || []);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
 
+  // 폼 입력 값 업데이트
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     if (selectedProduct) {
@@ -153,14 +150,15 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-amber-800">상품 관리</h1>
 
-        {roleCode === "SA" && (
-          <button
-            className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700"
-            onClick={() => handleNewClick()}
-          >
-            + 새 상품 등록
-          </button>
-        )}
+        {roleCode === "SA" ||
+          (roleCode === "MA" && (
+            <button
+              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700"
+              onClick={() => handleNewClick()}
+            >
+              + 새 상품
+            </button>
+          ))}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {products.map((product) => (
@@ -169,31 +167,34 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
             id={product.id.toString()}
             name={product.name}
             description={product.description}
-            imageUrl={product.imageUrl}
+            imageUrl={product.image_url}
             action={
-              roleCode === "SA" && (
-                <div className="absolute top-2 right-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
+              roleCode === "SA" ||
+              (roleCode === "MA" && (
+                // 매니저일 경우: 수정/삭제 버튼
+                <div className="flex items-center gap-2 ml-auto -mb-2">
+                  <button
                     onClick={() => handleEditClick(product)}
+                    className="flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors"
                   >
                     <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
+                    수정
+                  </button>
+                  <button
                     onClick={() => handleDelete(product.id)}
                     className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
                   >
                     <Trash2 size={14} />
-                  </Button>
+                    삭제
+                  </button>
                 </div>
-              )
+              ))
             }
           />
         ))}
       </div>
 
-      {/* New Product Dialog */}
+      {/* 상품 등록 팝업 */}
       <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -210,8 +211,10 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 </Label>
                 <Input
                   id="name"
+                  placeholder="상품 명"
                   onChange={handleInputChange}
                   className="col-span-3"
+                  autoComplete="off"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -220,8 +223,10 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 </Label>
                 <Input
                   id="description"
+                  placeholder="상품 설명"
                   onChange={handleInputChange}
                   className="col-span-3"
+                  autoComplete="off"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -247,7 +252,7 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Product Dialog */}
+      {/* 상품 수정 팝업 */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -264,9 +269,11 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 </Label>
                 <Input
                   id="name"
+                  placeholder="상품 명"
                   value={selectedProduct?.name || ""}
                   onChange={handleInputChange}
                   className="col-span-3"
+                  autoComplete="off"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -275,9 +282,11 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 </Label>
                 <Input
                   id="description"
+                  placeholder="상품 설명"
                   value={selectedProduct?.description || ""}
                   onChange={handleInputChange}
                   className="col-span-3"
+                  autoComplete="off"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">

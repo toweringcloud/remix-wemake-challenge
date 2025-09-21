@@ -122,6 +122,7 @@ export default function RecipeFormPage() {
             }
             className="w-full p-2 border rounded"
             required
+            autoComplete="off"
           />
         </div>
         <div>
@@ -136,6 +137,7 @@ export default function RecipeFormPage() {
             }
             className="w-full p-2 border rounded"
             rows={3}
+            autoComplete="off"
           ></textarea>
         </div>
 
@@ -152,6 +154,7 @@ export default function RecipeFormPage() {
                   handleIngredientChange(index, "name", e.target.value)
                 }
                 className="w-1/2 p-2 border rounded"
+                autoComplete="off"
               />
               <input
                 type="text"
@@ -161,6 +164,7 @@ export default function RecipeFormPage() {
                   handleIngredientChange(index, "amount", e.target.value)
                 }
                 className="w-1/2 p-2 border rounded"
+                autoComplete="off"
               />
               <button
                 type="button"

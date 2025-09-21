@@ -1,15 +1,8 @@
-import React, { useState } from "react";
-import { Link } from "react-router";
-import { Pencil, PlusCircle } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useNavigate, type LoaderFunction } from "react-router";
+import { Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -20,63 +13,53 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { useRoleStore } from "~/stores/user.store";
 
-// ✅ 1. 재고 그룹(Stock) 데이터의 타입을 명확하게 정의합니다.
+import type { Route } from "./+types/stock.page";
+import { StockCard } from "~/components/stock-card";
+import { useRoleStore } from "~/stores/user.store";
+import { getCookieSession } from "~/utils/cookie.server";
+import { createClient } from "~/utils/supabase.server";
+
+export const meta: Route.MetaFunction = () => [
+  { title: "Stocks | Caferium" },
+  { name: "description", content: "stock list" },
+];
+
+export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
+  const session = getCookieSession(request.headers.get("Cookie"));
+  if (!session) throw new Response("Unauthorized", { status: 401 });
+  if (!session?.cafeId) return { cafe: null };
+  const cafeId = session.cafeId;
+  console.log("stocks.cafeId", cafeId);
+
+  const { supabase } = createClient(request);
+  const { data: stocks } = await supabase
+    .from("stocks")
+    .select()
+    .eq("cafe_id", cafeId);
+  console.log("stocks.R", stocks);
+  return stocks;
+};
+
+// ✅ 1. 재고그룹(Stock) 데이터의 타입을 명확하게 정의합니다.
 type Stock = {
   id: number;
   name: string;
-  description: string | null;
-  image: string | null;
+  description: string;
+  image_url: string;
 };
 
-// 임시 데이터 (실제로는 DB에서 조회)
-const mockStocks: Stock[] = [
-  {
-    id: 1,
-    name: "원두",
-    description: "커피 추출에 사용되는 원두",
-    image: "https://via.placeholder.com/150/6b4f4b/ffffff?text=Beans",
-  },
-  {
-    id: 2,
-    name: "유제품",
-    description: "우유, 크림, 요거트 등",
-    image: "https://via.placeholder.com/150/ffffff/000000?text=Dairy",
-  },
-  {
-    id: 3,
-    name: "시럽 및 소스",
-    description: "음료에 사용되는 시럽과 소스",
-    image: "https://via.placeholder.com/150/f9a825/ffffff?text=Syrup",
-  },
-  {
-    id: 4,
-    name: "일회용품",
-    description: "컵, 빨대, 냅킨 등",
-    image: "https://via.placeholder.com/150/e0e0e0/000000?text=ETC",
-  },
-];
-
-export default function StocksPage() {
+export default function StocksPage({ loaderData }: Route.ComponentProps) {
+  const navigate = useNavigate();
   const { roleCode } = useRoleStore();
+  console.log("stocks.loaderData", loaderData);
 
-  // ✅ 2. useState에 Stock 타입 또는 null을 가질 수 있다고 명시합니다.
+  const [stocks] = useState<Stock[]>(loaderData || []);
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
 
-  const handleEditClick = (stock: Stock) => {
-    setSelectedStock(stock);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleSaveChanges = () => {
-    // 실제 앱에서는 여기서 수정 API를 호출합니다.
-    console.log("저장될 재고 그룹 정보:", selectedStock);
-    setIsEditDialogOpen(false);
-  };
-
-  // ✅ 3. Input 변경 핸들러
+  // 폼 입력 값 업데이트
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     if (selectedStock) {
@@ -87,64 +70,86 @@ export default function StocksPage() {
     }
   };
 
+  // 재고 등록
+  const handleNewClick = () => {
+    setIsNewDialogOpen(true);
+  };
+  const handleSaveNew = () => {
+    console.log("stocks.saveNew:", selectedStock);
+    setIsNewDialogOpen(false);
+  };
+
+  // 재고 수정
+  const handleEditClick = (stock: Stock) => {
+    setSelectedStock(stock);
+    setIsEditDialogOpen(true);
+  };
+  const handleSaveEdit = () => {
+    console.log("stocks.saveEdit:", selectedStock);
+    setIsEditDialogOpen(false);
+  };
+
+  // 재고 삭제
+  const handleDelete = (stockId: number) => {
+    alert(`재고그룹(${stockId})을 삭제합니다.`);
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-amber-800">재고 관리</h1>
-        {roleCode === "MA" && (
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> 새 카테고리 추가
-          </Button>
-        )}
-      </div>
+        <h1 className="text-3xl font-bold text-amber-800">
+          {roleCode === "BA" ? "재고" : "재고 관리"}
+        </h1>
 
+        {roleCode === "SA" ||
+          (roleCode === "MA" && (
+            <button
+              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700"
+              onClick={() => handleNewClick()}
+            >
+              + 새 재고
+            </button>
+          ))}
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {mockStocks.map((stock) => {
-          const placeholderImageUrl = `https://dummyimage.com/300x200/f5f5f4/a1887f.png&text=${encodeURIComponent(stock.name)}`;
-          const finalImageUrl = stock.image || placeholderImageUrl;
-
-          return (
-            <Link to={`/dashboard/stocks/${stock.id}/items`} key={stock.id}>
-              <Card key={stock.id} className="group relative overflow-hidden">
-                <CardHeader className="p-0">
-                  <div className="aspect-video bg-stone-100">
-                    <img
-                      src={finalImageUrl}
-                      alt={stock.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <CardTitle className="text-xl text-amber-800">
-                    {stock.name}
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {stock.description}
-                  </CardDescription>
-                </CardContent>
-                {roleCode === "MA" && (
-                  <div className="absolute top-2 right-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleEditClick(stock)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            </Link>
-          );
-        })}
+        {stocks.map((stock) => (
+          <StockCard
+            key={stock.id}
+            id={stock.id.toString()}
+            name={stock.name}
+            description={stock.description}
+            imageUrl={stock.image_url}
+            action={
+              roleCode === "SA" ||
+              (roleCode === "MA" && (
+                // 매니저일 경우: 수정/삭제 버튼
+                <div className="flex items-center gap-2 ml-auto -mb-2">
+                  <button
+                    onClick={() => handleEditClick(stock)}
+                    className="flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    수정
+                  </button>
+                  <button
+                    onClick={() => handleDelete(stock.id)}
+                    className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    삭제
+                  </button>
+                </div>
+              ))
+            }
+          />
+        ))}
       </div>
 
-      {/* 수정 Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      {/* 재고 그룹 등록 팝업 */}
+      <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>"{selectedStock?.name}" 그룹 수정</DialogTitle>
+            <DialogTitle>"{selectedStock?.name}" 재고 등록</DialogTitle>
             <DialogDescription>
               재고 그룹의 이름, 설명, 이미지를 수정합니다.
             </DialogDescription>
@@ -156,9 +161,10 @@ export default function StocksPage() {
               </Label>
               <Input
                 id="name"
-                value={selectedStock?.name || ""}
+                placeholder="재고 그룹 명"
                 onChange={handleInputChange}
                 className="col-span-3"
+                autoComplete="off"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -167,9 +173,68 @@ export default function StocksPage() {
               </Label>
               <Input
                 id="description"
+                placeholder="재고 그룹 설명"
+                onChange={handleInputChange}
+                className="col-span-3"
+                autoComplete="off"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="image" className="text-right">
+                이미지
+              </Label>
+              <Input id="image" type="file" className="col-span-3" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsNewDialogOpen(false)}
+            >
+              취소
+            </Button>
+            <Button type="submit" onClick={handleSaveNew}>
+              저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 재고 그룹 수정 팝업 */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>"{selectedStock?.name}" 재고 수정</DialogTitle>
+            <DialogDescription>
+              재고 그룹의 이름, 설명, 이미지를 수정합니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                이름
+              </Label>
+              <Input
+                id="name"
+                placeholder="재고 그룹 명"
+                value={selectedStock?.name || ""}
+                onChange={handleInputChange}
+                className="col-span-3"
+                autoComplete="off"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                설명
+              </Label>
+              <Input
+                id="description"
+                placeholder="재고 그룹 설명"
                 value={selectedStock?.description || ""}
                 onChange={handleInputChange}
                 className="col-span-3"
+                autoComplete="off"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -187,8 +252,8 @@ export default function StocksPage() {
             >
               취소
             </Button>
-            <Button type="submit" onClick={handleSaveChanges}>
-              저장하기
+            <Button type="submit" onClick={handleSaveEdit}>
+              저장
             </Button>
           </DialogFooter>
         </DialogContent>

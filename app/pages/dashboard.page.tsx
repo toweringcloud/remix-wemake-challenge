@@ -1,39 +1,35 @@
-import { type LoaderFunction } from "react-router";
 import { BookMarked, Archive, CookingPot, ShoppingCart } from "lucide-react";
 
 import type { Route } from "./+types/dashboard.page";
 import { FeatureCard } from "~/components/feature-card";
 import { useRoleStore } from "~/stores/user.store";
 
-// ✅ loader 데이터의 타입을 미리 정의합니다.
-type DashboardLoaderData = {
-  cafe: { name: string } | null;
-};
+// ✅ loader 데이터를 활용하여 meta의 title 변경
+// export const meta: Route.MetaFunction = ({ matches }: Route.MetaArgs) => {
+//   const dashboardLayoutMatch = matches.find(
+//     (match: any) => match.pathname === "/dashboard" // 또는 레이아웃에 고유한 id가 있다면 id로 찾기
+//   );
 
-// ✅ meta 함수가 loader 데이터를 인자로 받도록 수정
-export const meta: Route.MetaFunction = ({ matches }) => {
-  const dashboardLayoutMatch = matches.find(
-    (match: any) => match.pathname === "/dashboard" // 또는 레이아웃에 고유한 id가 있다면 id로 찾기
-  );
+//   type DashboardLoaderData = { cafe: { name: string } | null };
+//   const loaderData = dashboardLayoutMatch?.loaderData as
+//     | DashboardLoaderData
+//     | undefined;
+//   const cafeName = loaderData?.cafe?.name || "Caferium";
 
-  // ✅ as 키워드를 사용해 match.data의 타입을 명확하게 지정해줍니다.
-  const loaderData = dashboardLayoutMatch?.loaderData as
-    | DashboardLoaderData
-    | undefined;
-  const cafeName = loaderData?.cafe?.name || "Caferium";
+//   return [
+//     { title: `Dashboard | ${cafeName || "Caferium"}` },
+//     { name: "description", content: "feature list" },
+//   ];
+// };
 
+export const meta: Route.MetaFunction = () => {
   return [
-    { title: `Dashboard | ${cafeName || "Caferium"}` },
-    { name: "description", content: "select recipe or inventory menu" },
+    { title: `Dashboard | Caferium` },
+    { name: "description", content: "feature list" },
   ];
 };
 
-export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
-  console.log("dashboard.request", request);
-};
-
-export default function DashboardPage({ loaderData }: Route.ComponentProps) {
-  console.log("dashboard.request", loaderData);
+export default function DashboardPage() {
   const { roleCode } = useRoleStore();
 
   return (
@@ -42,7 +38,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
         {roleCode === "BA" ? "시니어클럽 카페" : "시니어클럽 카페 관리"}
       </h1>
       <p className="text-lg text-stone-600 mb-10">
-        원하시는 메뉴를 선택해주세요.
+        조회 또는 관리할 기능을 선택해주세요.
       </p>
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
         {roleCode === "SA" ? (

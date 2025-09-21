@@ -36,3 +36,11 @@ export function parseCookie2(
 
   return cookies;
 }
+
+export const getCookieSession = (data: any) => {
+  const cookies = parseCookie(data);
+  const session = JSON.parse(
+    Buffer.from(cookies.session || "", "base64").toString()
+  );
+  return session;
+};
