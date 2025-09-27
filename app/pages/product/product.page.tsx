@@ -5,7 +5,18 @@ import {
   type ActionFunction,
   type LoaderFunction,
 } from "react-router";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -37,12 +48,22 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   console.log("products.cafeId", cafeId);
 
   const { supabase } = createClient(request);
-  const { data: products } = await supabase
+  const { data } = await supabase
     .from("products")
     .select()
     .eq("cafe_id", cafeId);
-  console.log("products.R", products);
-  return products;
+
+  if (data) {
+    const products: Product[] = data.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      imageUrl: item.image_url,
+      updatedAt: item.updated_at,
+    }));
+    console.log("products.R", products);
+    return products;
+  } else return [];
 };
 
 export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
@@ -89,13 +110,13 @@ type Product = {
   id: number;
   name: string;
   description: string;
-  image_url: string;
+  imageUrl: string;
+  [key: string]: unknown;
 };
 
 export default function ProductsPage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const { roleCode } = useRoleStore();
-  console.log("products.loaderData", loaderData);
 
   const [products] = useState<Product[]>(loaderData || []);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -133,8 +154,18 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
   };
 
   // 상품 삭제
-  const handleDelete = (productId: number) => {
-    alert(`상품(${productId})을 삭제합니다.`);
+  const [recipeToDelete, setRecipeToDelete] = useState<Product | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const handleDeleteClick = (menu: Product) => {
+    setRecipeToDelete(menu); // 어떤 메뉴를 삭제할지 state에 저장
+    setIsAlertOpen(true); // Dialog를 엽니다.
+  };
+  const confirmDelete = () => {
+    if (!recipeToDelete) return;
+    // 실제 앱에서는 여기서 삭제 API를 호출합니다.
+    console.log(`'${recipeToDelete.name}' 레시피를 삭제합니다.`);
+    setIsAlertOpen(false);
+    setRecipeToDelete(null);
   };
 
   // 접근 권한 확인
@@ -148,15 +179,16 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-amber-800">상품 관리</h1>
+        <h1 className="text-3xl font-bold text-amber-800">상품</h1>
 
         {roleCode === "SA" ||
           (roleCode === "MA" && (
             <button
-              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700"
+              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
               onClick={() => handleNewClick()}
             >
-              + 새 상품
+              <Plus className="h-4 w-4" />
+              등록
             </button>
           ))}
       </div>
@@ -167,7 +199,7 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
             id={product.id.toString()}
             name={product.name}
             description={product.description}
-            imageUrl={product.image_url}
+            imageUrl={product.imageUrl}
             action={
               roleCode === "SA" ||
               (roleCode === "MA" && (
@@ -181,7 +213,7 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                     수정
                   </button>
                   <button
-                    onClick={() => handleDelete(product.id)}
+                    onClick={() => handleDeleteClick(product)}
                     className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
                   >
                     <Trash2 size={14} />
@@ -194,11 +226,11 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
         ))}
       </div>
 
-      {/* 상품 등록 팝업 */}
+      {/* ✅ 상품 등록 팝업 */}
       <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>"{selectedProduct?.name}" 상품 등록</DialogTitle>
+            <DialogTitle>상품 등록</DialogTitle>
             <DialogDescription>
               상품의 이름, 설명, 이미지를 등록합니다.
             </DialogDescription>
@@ -252,7 +284,7 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
         </DialogContent>
       </Dialog>
 
-      {/* 상품 수정 팝업 */}
+      {/* ✅ 상품 수정 팝업 */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -311,6 +343,27 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ✅ 상품 삭제 팝업 */}
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{recipeToDelete?.name}" 상품 내에 등록된 메뉴가 없을 경우에만
+              삭제 가능합니다. 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRecipeToDelete(null)}>
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              삭제 확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

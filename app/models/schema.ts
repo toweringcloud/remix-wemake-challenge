@@ -270,7 +270,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
 
 export const menusRelations = relations(menus, ({ one }) => ({
   cafe: one(cafes, { fields: [menus.cafeId], references: [cafes.id] }),
-  menuGroup: one(products, {
+  product: one(products, {
     fields: [menus.productId],
     references: [products.id],
   }),

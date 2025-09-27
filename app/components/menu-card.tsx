@@ -1,3 +1,4 @@
+import { Flame, Snowflake } from "lucide-react";
 import React, { useState, useEffect } from "react"; // ✅ useState, useEffect import
 import { Link } from "react-router-dom";
 
@@ -15,6 +16,8 @@ interface MenuCardProps {
   id: string;
   name: string;
   description: string;
+  category: string;
+  isHot: boolean;
   imageUrl: string;
   action?: React.ReactNode;
 }
@@ -23,6 +26,8 @@ export function MenuCard({
   id,
   name,
   description,
+  category,
+  isHot,
   imageUrl,
   action,
 }: MenuCardProps) {
@@ -55,8 +60,16 @@ export function MenuCard({
           <div className="flex flex-col w-[70%]">
             <CardHeader>
               <Link to={`/dashboard/recipes/${id}`}>
-                <CardTitle className="text-xl font-bold text-amber-800 hover:underline">
-                  {name}
+                <CardTitle className="text-xl font-bold text-amber-800 hover:underline flex flex-row gap-1">
+                  {name}{" "}
+                  {/* {["커피", "라떼"].find((i) => i === category) != undefined && */}
+                  {category !== "디저트" ? (
+                    isHot ? (
+                      <Flame className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <Snowflake className="h-4 w-4 text-blue-500" />
+                    )
+                  ) : null}
                 </CardTitle>
               </Link>
             </CardHeader>

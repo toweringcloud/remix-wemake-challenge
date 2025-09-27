@@ -12,10 +12,11 @@ import {
 } from "~/components/ui/card";
 
 interface RecipeCardProps {
-  id: string;
+  id: number;
   name: string;
   description: string;
-  imageUrl: string;
+  ingredients: [{ name: string; quantity: string }];
+  imageUrl?: string;
   action?: React.ReactNode;
 }
 
@@ -23,6 +24,7 @@ export function RecipeCard({
   id,
   name,
   description,
+  ingredients,
   imageUrl,
   action,
 }: RecipeCardProps) {
@@ -63,6 +65,15 @@ export function RecipeCard({
             <CardContent className="flex-grow">
               <CardDescription className="text-stone-600">
                 {description}
+                {ingredients.length > 0 ? (
+                  <ul className="list-disc list-inside space-y-0 py-2 text-xs">
+                    {ingredients.map((item, idx) => (
+                      <li key={idx}>
+                        {item.name}: {item.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </CardDescription>
             </CardContent>
             <CardFooter>{action}</CardFooter>

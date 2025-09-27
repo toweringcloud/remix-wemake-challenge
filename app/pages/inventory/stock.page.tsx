@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, type LoaderFunction } from "react-router";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -41,12 +41,12 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   return stocks;
 };
 
-// ✅ 1. 재고그룹(Stock) 데이터의 타입을 명확하게 정의합니다.
+// ✅ 1. 인벤토리(Stock) 데이터의 타입을 명확하게 정의합니다.
 type Stock = {
   id: number;
   name: string;
   description: string;
-  image_url: string;
+  imageUrl: string;
 };
 
 export default function StocksPage({ loaderData }: Route.ComponentProps) {
@@ -97,17 +97,16 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-amber-800">
-          {roleCode === "BA" ? "재고" : "재고 관리"}
-        </h1>
+        <h1 className="text-3xl font-bold text-amber-800">재고</h1>
 
         {roleCode === "SA" ||
           (roleCode === "MA" && (
             <button
-              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700"
+              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
               onClick={() => handleNewClick()}
             >
-              + 새 재고
+              <Plus className="h-4 w-4" />
+              등록
             </button>
           ))}
       </div>
@@ -118,7 +117,7 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
             id={stock.id.toString()}
             name={stock.name}
             description={stock.description}
-            imageUrl={stock.image_url}
+            imageUrl={stock.imageUrl}
             action={
               roleCode === "SA" ||
               (roleCode === "MA" && (
@@ -149,7 +148,7 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
       <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>"{selectedStock?.name}" 재고 등록</DialogTitle>
+            <DialogTitle>재고 등록</DialogTitle>
             <DialogDescription>
               재고 그룹의 이름, 설명, 이미지를 수정합니다.
             </DialogDescription>

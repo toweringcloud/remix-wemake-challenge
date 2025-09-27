@@ -4,15 +4,13 @@ import { Outlet, useLoaderData } from "react-router-dom";
 import type { Route } from "./+types/dashboard.layout";
 import Sidebar from "~/components/layout/sidebar";
 import { useCafeStore } from "~/stores/cafe.store";
-import { parseCookie } from "~/utils/cookie.server";
+import { getCookieSession } from "~/utils/cookie.server";
 import { createClient } from "~/utils/supabase.server";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   try {
-    const cookies = parseCookie(request.headers.get("Cookie"));
-    const session = JSON.parse(
-      Buffer.from(cookies.session || "", "base64").toString()
-    );
+    const session = getCookieSession(request.headers.get("Cookie"));
+    if (!session) throw new Response("Unauthorized", { status: 401 });
     if (!session?.cafeId) return { cafe: null };
 
     const { supabase } = createClient(request);

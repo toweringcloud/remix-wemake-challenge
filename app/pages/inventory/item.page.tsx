@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 
 import type { Route } from "./+types/item.page";
 import { useRoleStore } from "~/stores/user.store";
@@ -85,9 +85,10 @@ export default function ItemPage() {
         {roleCode === "MA" && !isAdding && (
           <button
             onClick={handleAddNewItem}
-            className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700"
+            className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
           >
-            + 새 품목 추가
+            <Plus className="h-4 w-4" />
+            등록
           </button>
         )}
       </div>
