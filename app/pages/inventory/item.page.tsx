@@ -1,21 +1,117 @@
 import { useState } from "react";
 import { Plus, Save, Trash2 } from "lucide-react";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+
 import type { Route } from "./+types/item.page";
 import { useRoleStore } from "~/stores/user.store";
-import { inventoryData } from "~/data/inventory.data";
+import {
+  useParams,
+  type LoaderFunction,
+  type LoaderFunctionArgs,
+} from "react-router";
+import { getCookieSession } from "~/utils/cookie.server";
+import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "Items | Caferium" },
+  { title: "Item List | Caferium" },
   { name: "description", content: "item list" },
 ];
 
-export default function ItemPage() {
+export const loader: LoaderFunction = async ({
+  request,
+  params,
+}: LoaderFunctionArgs) => {
+  const session = getCookieSession(request.headers.get("Cookie"));
+  if (!session) throw new Response("Unauthorized", { status: 401 });
+  if (!session?.cafeId) return { cafe: null };
+  const cafeId = session.cafeId;
+  console.log("items.cafeId", cafeId);
+
+  const { stockId } = params;
+  console.log("items.stockId", stockId);
+
+  const { supabase } = createClient(request);
+  const { data: stockData } = await supabase
+    .from("stocks")
+    .select()
+    .eq("cafe_id", cafeId)
+    .order("name");
+
+  const stocks: Stock[] = stockData!.map((item: any) => ({
+    id: item.id,
+    name: item.name,
+  }));
+  const comboStocks = [{ id: 0, name: "전체" }, ...stocks];
+  console.log("items.R0", comboStocks);
+
+  const { data } = await supabase
+    .from("items")
+    .select(
+      `
+      *,
+      stocks (
+        id, name
+      )
+    `
+    )
+    .eq("cafe_id", cafeId)
+    .order("name");
+
+  if (data) {
+    const items: Item[] = data.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.count,
+      unit: item.unit,
+      stockId: item.stocks.id,
+      stockName: item.stocks.name,
+      imageUrl: item.image_url,
+      updatedAt: item.updated_at,
+    }));
+    console.log("items.R", items);
+    return [comboStocks, items];
+  } else return [];
+};
+
+// 재고 타입 정의
+type Stock = {
+  id: number;
+  name: string;
+};
+
+// 아이템 타입 정의
+type Item = {
+  id: number;
+  name: string;
+  quantity: number;
+  unit: string;
+  stockId?: number;
+  stockName?: string;
+  [key: string]: any;
+};
+
+export default function ItemPage({ loaderData }: Route.ComponentProps) {
   const { roleCode } = useRoleStore();
+  const { stockId } = useParams<{ stockId: string }>();
 
-  const [items, setItems] = useState(inventoryData);
+  if (!loaderData) return;
+
+  // 재고 목록 조회
+  const [stocks] = useState<Stock[]>(loaderData[0]);
+  console.log("stocks.loaderData[0]", loaderData);
+
+  // 아이템 목록 조회
+  const [items, setItems] = useState<Item[]>(loaderData[1]);
+  console.log("items.loaderData[1]", loaderData);
+
   const [editingId, setEditingId] = useState<number | null>(null);
-
   const [isAdding, setIsAdding] = useState(false);
   const [newItem, setNewItem] = useState({ name: "", quantity: 0, unit: "" });
 
@@ -39,7 +135,7 @@ export default function ItemPage() {
       return;
     }
     // 새 아이템 객체 생성 (실제 앱에서는 id를 서버에서 받아옴)
-    const newRecord = { ...newItem, id: Date.now() };
+    const newRecord = { ...newItem, id: Date.now(), stockId: selectedStockId };
     setItems([newRecord, ...items]);
     setIsAdding(false);
     setNewItem({ name: "", quantity: 0, unit: "" });
@@ -73,14 +169,41 @@ export default function ItemPage() {
 
   // '취소' 버튼 클릭 시
   const handleCancel = () => {
-    setItems(inventoryData); // 변경사항을 원래 데이터로 되돌림 (임시)
+    setItems(items); // 변경사항을 원래 데이터로 되돌림 (임시)
     setEditingId(null);
   };
+
+  // 재고 선택 콤보
+  const filterStocks =
+    stockId && stocks.filter((stock: Stock) => stock.id === parseInt(stockId));
+  const [selectedStockId, setSelectedStockId] = useState<number>();
+  const [selectedStock, setSelectedStock] = useState(
+    (filterStocks && filterStocks[0] && filterStocks[0].name) || "전체"
+  );
+  const filteredItems =
+    selectedStock === "전체"
+      ? items
+      : items.filter((item: Item) => item.stockName === selectedStock);
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">재고 상세</h1>
+        <div className="flex flex-row gap-4">
+          <h1 className="text-3xl font-bold text-amber-800">재고</h1>
+          <Select value={selectedStock} onValueChange={setSelectedStock}>
+            <SelectTrigger className="w-[180px] bg-white">
+              <SelectValue placeholder="카테고리 선택" />
+            </SelectTrigger>
+            <SelectContent className="bg-white shadow-md border border-stone-200">
+              {stocks.map((stock: Stock) => (
+                <SelectItem key={stock.id} value={stock.name}>
+                  {stock.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* ✅ isAdding 상태가 아닐 때만 '새 품목 추가' 버튼이 보이도록 설정 */}
         {roleCode === "MA" && !isAdding && (
           <button
@@ -163,7 +286,7 @@ export default function ItemPage() {
                 </td>
               </tr>
             )}
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <tr key={item.id} className="border-b hover:bg-gray-50">
                 <td className="p-3 font-semibold">{item.name}</td>
                 {editingId === item.id ? (

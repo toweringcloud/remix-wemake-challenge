@@ -36,7 +36,7 @@ export const loader: LoaderFunction = async ({
   const { recipeId } = params;
   console.log("recipe.menuId", recipeId);
 
-  // 레시피 등록 모드
+  // 레시피 등록
   if (!recipeId) return {};
 
   const { supabase } = createClient(request);

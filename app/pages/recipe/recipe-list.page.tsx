@@ -50,8 +50,8 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
     id: item.id,
     name: item.name,
   }));
-  const filteredProducts = [{ id: 0, name: "전체" }, ...products];
-  console.log("recipes.R0", filteredProducts);
+  const comboProducts = [{ id: 0, name: "전체" }, ...products];
+  console.log("recipes.R0", comboProducts);
 
   const { data } = await supabase
     .from("recipes")
@@ -88,7 +88,7 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
       updatedAt: item.updated_at,
     }));
     console.log("recipes.R", recipes);
-    return [filteredProducts, recipes];
+    return [comboProducts, recipes];
   } else return [];
 };
 
@@ -134,6 +134,7 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
     setOneToDelete(null);
   };
 
+  // 레시피 선택 콤보
   const [selectedProduct, setSelectedProduct] = useState("전체");
   const filteredRecipes =
     selectedProduct === "전체"
