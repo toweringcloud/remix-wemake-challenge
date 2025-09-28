@@ -5,7 +5,7 @@ import {
   type ActionFunction,
   type LoaderFunction,
 } from "react-router";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 
 import {
   AlertDialog,
@@ -118,7 +118,10 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const { roleCode } = useRoleStore();
 
+  // 상품 목록 조회
   const [products] = useState<Product[]>(loaderData || []);
+  console.log("products.loaderData", loaderData);
+
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
@@ -154,18 +157,17 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
   };
 
   // 상품 삭제
-  const [recipeToDelete, setRecipeToDelete] = useState<Product | null>(null);
+  const [oneToDelete, setOneToDelete] = useState<Product | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const handleDeleteClick = (menu: Product) => {
-    setRecipeToDelete(menu); // 어떤 메뉴를 삭제할지 state에 저장
-    setIsAlertOpen(true); // Dialog를 엽니다.
+    setOneToDelete(menu);
+    setIsAlertOpen(true);
   };
   const confirmDelete = () => {
-    if (!recipeToDelete) return;
-    // 실제 앱에서는 여기서 삭제 API를 호출합니다.
-    console.log(`'${recipeToDelete.name}' 레시피를 삭제합니다.`);
+    if (!oneToDelete) return;
+    console.log(`삭제 또는 비활성화 대상 : '${oneToDelete.name}'`);
     setIsAlertOpen(false);
-    setRecipeToDelete(null);
+    setOneToDelete(null);
   };
 
   // 접근 권한 확인
@@ -235,8 +237,8 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
               상품의 이름, 설명, 이미지를 등록합니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Form method="post">
+          <Form method="post">
+            <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   이름
@@ -265,19 +267,31 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 <Label htmlFor="picture" className="text-right">
                   이미지
                 </Label>
-                <Input id="picture" type="file" className="col-span-3" />
+                <Input
+                  id="picture"
+                  name="picture"
+                  type="file"
+                  className="col-span-3"
+                />
               </div>
-            </Form>
-          </div>
+            </div>
+          </Form>
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
+              className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
               onClick={() => setIsNewDialogOpen(false)}
             >
+              <XCircle className="h-4 w-4" />
               취소
             </Button>
-            <Button type="submit" onClick={handleSaveNew}>
+            <Button
+              type="submit"
+              className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+              onClick={handleSaveNew}
+            >
+              <Save className="h-4 w-4" />
               저장
             </Button>
           </DialogFooter>
@@ -293,8 +307,8 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
               상품의 이름, 설명, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Form method="post">
+          <Form method="post">
+            <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   이름
@@ -325,19 +339,31 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 <Label htmlFor="picture" className="text-right">
                   이미지
                 </Label>
-                <Input id="picture" type="file" className="col-span-3" />
+                <Input
+                  id="picture"
+                  name="picture"
+                  type="file"
+                  className="col-span-3"
+                />
               </div>
-            </Form>
-          </div>
+            </div>
+          </Form>
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
+              className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
               onClick={() => setIsEditDialogOpen(false)}
             >
+              <XCircle className="h-4 w-4" />
               취소
             </Button>
-            <Button type="submit" onClick={handleSaveEdit}>
+            <Button
+              type="submit"
+              className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+              onClick={handleSaveEdit}
+            >
+              <Save className="h-4 w-4" />
               저장
             </Button>
           </DialogFooter>
@@ -350,16 +376,30 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{recipeToDelete?.name}" 상품 내에 등록된 메뉴가 없을 경우에만
-              삭제 가능합니다. 이 작업은 되돌릴 수 없습니다.
+              "{oneToDelete?.name}" 상품 내에 등록된 메뉴가 없을 경우에만 삭제
+              가능합니다. 이 작업은 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRecipeToDelete(null)}>
-              취소
+            <AlertDialogCancel asChild>
+              <Button
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setOneToDelete(null)}
+              >
+                <XCircle className="h-4 w-4 group-hover:text-red-600 transition-colors" />
+                취소
+              </Button>
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              삭제 확인
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
+                onClick={confirmDelete}
+              >
+                <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
+                삭제 확인
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

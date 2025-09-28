@@ -15,10 +15,11 @@ import {
 interface MenuCardProps {
   id: string;
   name: string;
-  description: string;
+  description?: string;
+  status: string;
   category: string;
-  isHot: boolean;
-  imageUrl: string;
+  isHot?: boolean;
+  imageUrl?: string;
   action?: React.ReactNode;
 }
 
@@ -26,6 +27,7 @@ export function MenuCard({
   id,
   name,
   description,
+  status,
   category,
   isHot,
   imageUrl,
@@ -75,8 +77,9 @@ export function MenuCard({
             </CardHeader>
             <CardContent className="flex-grow">
               <CardDescription className="text-stone-600">
-                {description}
+                {description || "no recipe available!"}
               </CardDescription>
+              <div className="text-xs py-2">{status}</div>
             </CardContent>
             <CardFooter>{action}</CardFooter>
           </div>

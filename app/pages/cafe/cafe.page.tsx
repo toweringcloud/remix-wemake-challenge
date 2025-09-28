@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Form, useNavigate } from "react-router-dom";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -70,7 +70,7 @@ export default function CafeEditPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSave} className="space-y-6">
+          <Form onSubmit={handleSave} className="space-y-6">
             <div className="space-y-2">
               <Label
                 htmlFor="name"
@@ -123,7 +123,7 @@ export default function CafeEditPage() {
                 저장하기
               </Button>
             </div>
-          </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

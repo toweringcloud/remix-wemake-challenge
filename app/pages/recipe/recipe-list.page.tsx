@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, type LoaderFunction } from "react-router-dom";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, XCircle } from "lucide-react";
 
 import {
   AlertDialog,
@@ -12,6 +12,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 import type { Route } from "./+types/recipe-list.page";
 import { RecipeCard } from "~/components/recipe-card";
@@ -33,11 +40,29 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   console.log("recipes.cafeId", cafeId);
 
   const { supabase } = createClient(request);
+  const { data: productData } = await supabase
+    .from("products")
+    .select()
+    .eq("cafe_id", cafeId)
+    .order("name");
+
+  const products: Product[] = productData!.map((item: any) => ({
+    id: item.id,
+    name: item.name,
+  }));
+  const filteredProducts = [{ id: 0, name: "전체" }, ...products];
+  console.log("recipes.R0", filteredProducts);
+
   const { data } = await supabase
     .from("recipes")
     .select(
       `
       *,
+      menus (
+        products (
+          name
+        )
+      ),
       recipe_ingredients (
         quantity,
         ingredients (
@@ -58,48 +83,83 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
         name: i.ingredients.name,
         quantity: i.quantity,
       })),
+      productName: item.menus.products.name,
       imageUrl: item.video,
       updatedAt: item.updated_at,
     }));
-    console.log("recipes.R", data);
-    return recipes;
+    console.log("recipes.R", recipes);
+    return [filteredProducts, recipes];
   } else return [];
 };
 
-// 레시피(Recipe) 타입 정의
+// 상품 타입 정의
+type Product = {
+  id: number;
+  name: string;
+};
+
+// 레시피 타입 정의
 type Recipe = {
   id: number;
   name: string;
   description: string;
   ingredients: [{ name: string; quantity: string }];
-  imageUrl: string;
   [key: string]: any;
 };
 
 export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
   const { roleCode } = useRoleStore();
 
-  const [recipes] = useState<Recipe[]>(loaderData || []);
+  if (!loaderData) return;
+
+  // 상품 목록 조회
+  const [products] = useState<Product[]>(loaderData[0]);
+  console.log("recipes.loaderData[0]", loaderData);
+
+  // 레시피 목록 조회
+  const [recipes] = useState<Recipe[]>(loaderData[1]);
+  console.log("recipes.loaderData[1]", loaderData);
 
   // 레시피 삭제
-  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
+  const [oneToDelete, setOneToDelete] = useState<Recipe | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const handleDeleteClick = (menu: Recipe) => {
-    setRecipeToDelete(menu); // 어떤 메뉴를 삭제할지 state에 저장
-    setIsAlertOpen(true); // Dialog를 엽니다.
+    setOneToDelete(menu);
+    setIsAlertOpen(true);
   };
   const confirmDelete = () => {
-    if (!recipeToDelete) return;
-    // 실제 앱에서는 여기서 삭제 API를 호출합니다.
-    console.log(`'${recipeToDelete.name}' 레시피를 삭제합니다.`);
+    if (!oneToDelete) return;
+    console.log(`삭제 또는 비활성화 대상 : '${oneToDelete.name}'`);
     setIsAlertOpen(false);
-    setRecipeToDelete(null);
+    setOneToDelete(null);
   };
+
+  const [selectedProduct, setSelectedProduct] = useState("전체");
+  const filteredRecipes =
+    selectedProduct === "전체"
+      ? recipes
+      : recipes.filter(
+          (recipe: Recipe) => recipe.productName === selectedProduct
+        );
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-amber-800">레시피</h1>
+        <div className="flex flex-row gap-4">
+          <h1 className="text-3xl font-bold text-amber-800">레시피</h1>
+          <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+            <SelectTrigger className="w-[180px] bg-white">
+              <SelectValue placeholder="카테고리 선택" />
+            </SelectTrigger>
+            <SelectContent className="bg-white shadow-md border border-stone-200">
+              {products.map((product) => (
+                <SelectItem key={product.id} value={product.name}>
+                  {product.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* 스토어에서 가져온 role 값으로 매니저 여부를 확인합니다. */}
         {roleCode === "MA" && (
@@ -112,7 +172,7 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recipes.map((recipe) => (
+        {filteredRecipes.map((recipe) => (
           <RecipeCard
             key={recipe.id}
             id={recipe.id}
@@ -161,17 +221,30 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{recipeToDelete?.name}" 레시피 정보가 삭제되며 메뉴 수정에서
-              레시피 생성 액션을 통해 추가할 수 있습니다. 이 작업은 되돌릴 수
-              없습니다.
+              "{oneToDelete?.name}" 레시피가 삭제되며, 메뉴 수정에서 레시피 생성
+              액션을 통해 다시 추가할 수 있습니다. 이 작업은 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRecipeToDelete(null)}>
-              취소
+            <AlertDialogCancel asChild>
+              <Button
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setOneToDelete(null)}
+              >
+                <XCircle className="h-4 w-4 group-hover:text-red-600 transition-colors" />
+                취소
+              </Button>
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              삭제 확인
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
+                onClick={confirmDelete}
+              >
+                <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
+                삭제 확인
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  Form,
+  type LoaderFunctionArgs,
+  type LoaderFunction,
+  useLoaderData,
+} from "react-router-dom";
 import { Trash2 } from "lucide-react";
 
 import type { Route } from "./+types/recipe-form.page";
 import { useRoleStore } from "~/stores/user.store";
-import { recipesData } from "~/data/recipes.data";
+import { getCookieSession } from "~/utils/cookie.server";
+import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => {
   const { recipeId } = useParams<{ recipeId: string }>();
@@ -15,8 +23,76 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
-// 재료 항목에 대한 인터페이스 정의
+export const loader: LoaderFunction = async ({
+  request,
+  params,
+}: LoaderFunctionArgs) => {
+  const session = getCookieSession(request.headers.get("Cookie"));
+  if (!session) throw new Response("Unauthorized", { status: 401 });
+  if (!session?.cafeId) return { cafe: null };
+  const cafeId = session.cafeId;
+  console.log("recipe.cafeId", cafeId);
+
+  const { recipeId } = params;
+  console.log("recipe.menuId", recipeId);
+
+  // 레시피 등록 모드
+  if (!recipeId) return {};
+
+  const { supabase } = createClient(request);
+  const { data } = await supabase
+    .from("recipes")
+    .select(
+      `
+      *,
+      menus(id, image_url),
+      recipe_ingredients (
+        quantity,
+        ingredients (
+          id, name
+        )
+      )
+    `
+    )
+    .eq("cafe_id", cafeId)
+    .eq("menu_id", recipeId)
+    .single();
+
+  if (!data) {
+    throw new Response("Recipe Not Found", { status: 404 });
+  }
+
+  const recipe: Recipe = {
+    id: data.menus.id,
+    name: data.name,
+    description: data.description,
+    ingredients: data.recipe_ingredients.map((i: any) => ({
+      id: i.ingredients.id,
+      name: i.ingredients.name,
+      amount: i.quantity,
+    })),
+    steps: data.steps,
+    imageUrl: data.menus.image_url,
+    videoUrl: data.video,
+    updatedAt: data.updated_at,
+  };
+  console.log("recipe.R", recipe);
+  return { recipe };
+};
+
+// 레시피 타입 정의
+type Recipe = {
+  id: number;
+  name: string;
+  description: string;
+  ingredients: [{ name: string; quantity: string }];
+  steps: string[];
+  [key: string]: any;
+};
+
+// 재료 타입 정의
 interface Ingredient {
+  id?: number;
   name: string;
   amount: string;
 }
@@ -26,15 +102,15 @@ export default function RecipeFormPage() {
   const { roleCode } = useRoleStore();
   const { recipeId } = useParams<{ recipeId: string }>();
 
-  // recipeId가 있으면 수정 모드, 없으면 생성 모드
+  // 레시피 상세 조회 (recipeId가 있으면 수정 모드, 없으면 생성 모드)
+  const { recipe } = useLoaderData<Recipe>();
   const isEditMode = Boolean(recipeId);
+  console.log("recipe.loaderData", recipe, isEditMode);
 
   // 각 state의 타입을 명확하게 지정
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const [ingredients, setIngredients] = useState<Ingredient[]>([
-    { name: "", amount: "" },
-  ]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [steps, setSteps] = useState<string[]>([""]);
 
   useEffect(() => {
@@ -45,9 +121,7 @@ export default function RecipeFormPage() {
 
     // ✅ 수정 모드일 때, URL의 ID를 사용해 올바른 데이터를 불러옵니다.
     if (isEditMode) {
-      const recipeToEdit = recipesData.find((r) => r.id === recipeId);
-
-      // ✅ 찾아온 데이터로 폼의 상태를 설정합니다.
+      const recipeToEdit = recipe;
       if (recipeToEdit) {
         setName(recipeToEdit.name);
         setDescription(recipeToEdit.description);
@@ -104,7 +178,7 @@ export default function RecipeFormPage() {
         {isEditMode ? "레시피 수정" : "새 레시피 등록"}
       </h1>
 
-      <form
+      <Form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md space-y-6"
       >
@@ -233,7 +307,7 @@ export default function RecipeFormPage() {
             {isEditMode ? "수정 완료" : "등록하기"}
           </button>
         </div>
-      </form>
+      </Form>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import {
   type LoaderFunction,
   type LoaderFunctionArgs,
 } from "react-router-dom";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 
 import {
   AlertDialog,
@@ -26,7 +26,6 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Switch } from "~/components/ui/switch";
 
 import type { Route } from "./+types/menu.page";
 import { MenuCard } from "~/components/menu-card";
@@ -59,7 +58,7 @@ export const loader: LoaderFunction = async ({
   const { supabase } = createClient(request);
   const { data } = await supabase
     .from("menus")
-    .select("*, products(name)")
+    .select("*, products(name), recipes(description)")
     .eq("cafe_id", cafeId)
     .eq("product_id", productId);
 
@@ -68,7 +67,7 @@ export const loader: LoaderFunction = async ({
       id: item.id,
       category: item.products.name,
       name: item.name,
-      description: item.description,
+      description: item.recipes.description,
       isHot: item.is_hot,
       price: item.price,
       stock: item.stock,
@@ -86,24 +85,33 @@ type Menu = {
   id: number;
   category: string;
   name: string;
-  description: string;
-  isHot: boolean;
+  description?: string;
+  isHot?: boolean;
   price: number;
   stock: number;
   isActive: boolean;
-  imageUrl: string;
+  imageUrl?: string;
   [key: string]: any;
 };
 
 export default function MenusPage({ loaderData }: Route.ComponentProps) {
   const { roleCode } = useRoleStore();
 
+  // 메뉴 목록 조회
   const [menus] = useState<Menu[]>(loaderData || []);
+  console.log("menus.loaderData", loaderData);
+
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [tempOption, setTempOption] = useState<"none" | "hot" | "ice">("none");
   const [shouldGenerateRecipe, setShouldGenerateRecipe] = useState(false);
+
+  const handleIsActiveChange = (checked: boolean) => {
+    if (selectedMenu) {
+      setSelectedMenu({ ...selectedMenu, isActive: checked });
+    }
+  };
 
   // 폼 입력 값 업데이트
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,20 +147,17 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
   };
 
   // 메뉴 삭제
-  const [menuToDelete, setMenuToDelete] = useState<Menu | null>(null);
+  const [oneToDelete, setOneToDelete] = useState<Menu | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const handleDeleteClick = (menu: Menu) => {
-    setMenuToDelete(menu); // 어떤 메뉴를 삭제할지 state에 저장
-    setIsAlertOpen(true); // Dialog를 엽니다.
+    setOneToDelete(menu);
+    setIsAlertOpen(true);
   };
   const confirmDelete = () => {
-    if (!menuToDelete) return;
-    // 실제 앱에서는 여기서 삭제 API를 호출합니다. (isActive: false로 업데이트)
-    console.log(
-      `'${menuToDelete.name}' 메뉴의 판매 상태를 '판매 안함'으로 변경합니다.`
-    );
+    if (!oneToDelete) return;
+    console.log(`삭제 또는 비활성화 대상 : '${oneToDelete.name}'`);
     setIsAlertOpen(false);
-    setMenuToDelete(null);
+    setOneToDelete(null);
   };
 
   return (
@@ -177,7 +182,8 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
             key={menu.id}
             id={menu.id.toString()}
             name={menu.name}
-            description={`[${menu.isActive ? "판매중" : "판매중지"}] 가격: ${menu.price}원, 재고: ${menu.stock}EA`}
+            description={menu.description}
+            status={`[${menu.isActive ? "판매중" : "판매중지"}] 가격: ${menu.price} 원, 재고: ${menu.stock} EA`}
             category={menu.category}
             isHot={menu.isHot}
             imageUrl={menu.imageUrl}
@@ -208,23 +214,23 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
 
       {/* ✅ 메뉴 등록 팝업 */}
       <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>메뉴 등록</DialogTitle>
             <DialogDescription>
               메뉴의 이름, 가격, 이미지를 등록합니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Form method="post">
+          <Form method="post">
+            <div className="grid gap-4 pt-2 pb-8">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   이름
                 </Label>
                 <Input
                   id="name"
+                  name="name"
                   placeholder="메뉴 명"
-                  onChange={handleInputChange}
                   className="col-span-3"
                   autoComplete="off"
                 />
@@ -232,10 +238,8 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">온도</Label>
                 <RadioGroup
+                  name="temperature"
                   defaultValue="none"
-                  onValueChange={(value: "hot" | "ice" | "none") =>
-                    setTempOption(value)
-                  }
                   className="col-span-3 flex items-center space-x-4"
                 >
                   <div className="flex items-center space-x-2">
@@ -257,24 +261,10 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
                   가격
                 </Label>
                 <Input
-                  type="number"
                   id="price"
-                  placeholder="가격"
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="stock" className="text-right">
-                  재고
-                </Label>
-                <Input
+                  name="price"
                   type="number"
-                  id="stock"
-                  placeholder="재고"
-                  value={selectedMenu?.stock || 0}
-                  onChange={handleInputChange}
+                  placeholder="원 단위"
                   className="col-span-3"
                   autoComplete="off"
                 />
@@ -283,37 +273,55 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
                 <Label htmlFor="picture" className="text-right">
                   이미지
                 </Label>
-                <Input id="picture" type="file" className="col-span-3" />
-              </div>
-              <div className="col-start-2 col-span-3 flex items-center space-x-2 mt-2">
-                <Checkbox
-                  id="generate-recipe"
-                  checked={shouldGenerateRecipe}
-                  onCheckedChange={(checked: boolean) =>
-                    setShouldGenerateRecipe(checked)
-                  }
+                <Input
+                  id="picture"
+                  name="picture"
+                  type="file"
+                  className="col-span-3"
                 />
-                <Label
-                  htmlFor="generate-recipe"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  AI로 레시피 자동 생성
-                </Label>
               </div>
-            </Form>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsNewDialogOpen(false)}
-            >
-              취소
-            </Button>
-            <Button type="submit" onClick={handleSaveNew}>
-              저장
-            </Button>
-          </DialogFooter>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="picture" className="text-right">
+                  AI 옵션
+                </Label>
+                <div className="col-start-2 col-span-3 flex items-center space-x-2">
+                  <Checkbox id="generate-recipe" name="generateRecipe" />
+                  <Label
+                    htmlFor="generate-recipe"
+                    className="text-sm font-medium leading-none"
+                  >
+                    이미지 자동 생성
+                  </Label>
+                  <Checkbox id="generate-recipe" name="generateRecipe" />
+                  <Label
+                    htmlFor="generate-recipe"
+                    className="text-sm font-medium leading-none"
+                  >
+                    레시피 자동 생성
+                  </Label>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setIsNewDialogOpen(false)}
+              >
+                <XCircle className="h-4 w-4" />
+                취소
+              </Button>
+              <Button
+                type="submit"
+                onClick={handleSaveNew}
+                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+              >
+                <Save className="h-4 w-4" />
+                저장
+              </Button>
+            </DialogFooter>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -326,89 +334,110 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
               메뉴의 이름, 가격, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                메뉴명
-              </Label>
-              <Input
-                id="name"
-                placeholder="메뉴 명"
-                value={selectedMenu?.name || ""}
-                onChange={handleInputChange}
-                className="col-span-3"
-                autoComplete="off"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">
-                가격
-              </Label>
-              <Input
-                type="number"
-                id="price"
-                placeholder="가격"
-                value={selectedMenu?.price || 0}
-                onChange={handleInputChange}
-                className="col-span-3"
-                autoComplete="off"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="stock" className="text-right">
-                재고
-              </Label>
-              <Input
-                type="number"
-                id="stock"
-                placeholder="재고"
-                value={selectedMenu?.stock || 0}
-                onChange={handleInputChange}
-                className="col-span-3"
-                autoComplete="off"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="image" className="text-right">
-                이미지
-              </Label>
-              <Input id="image" type="file" className="col-span-3" />
-            </div>
-            <div className="flex items-center justify-end gap-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isHot"
-                  checked={selectedMenu?.isHot}
-                  onCheckedChange={(checked) =>
-                    handleSwitchChange("isHot", checked)
-                  }
+          <Form method="post">
+            <div className="grid gap-4 pt-2 pb-8">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  이름
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={selectedMenu?.name || ""}
+                  placeholder="메뉴 명"
+                  className="col-span-3"
+                  autoComplete="off"
                 />
-                <Label htmlFor="isHot">HOT</Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isActive"
-                  checked={selectedMenu?.is_active}
-                  onCheckedChange={(checked) =>
-                    handleSwitchChange("isActive", checked)
-                  }
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">온도</Label>
+                <RadioGroup
+                  name="temperature"
+                  value={selectedMenu?.isHot ? "hot" : "ice"}
+                  defaultValue="none"
+                  className="col-span-3 flex items-center space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="hot" id="r-hot" />
+                    <Label htmlFor="r-hot">핫(Hot)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="ice" id="r-ice" />
+                    <Label htmlFor="r-ice">아이스(Ice)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="none" id="r-none" />
+                    <Label htmlFor="r-none">해당없음</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="price" className="text-right">
+                  가격
+                </Label>
+                <Input
+                  id="price"
+                  name="price"
+                  value={selectedMenu?.price || 0}
+                  type="number"
+                  placeholder="원 단위"
+                  className="col-span-3"
+                  autoComplete="off"
                 />
-                <Label htmlFor="isActive">판매중</Label>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="picture" className="text-right">
+                  이미지
+                </Label>
+                <Input
+                  id="picture"
+                  name="picture"
+                  type="file"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="picture" className="text-right">
+                  AI 옵션
+                </Label>
+                <div className="col-start-2 col-span-3 flex items-center space-x-2">
+                  <Checkbox id="generate-recipe" name="generateRecipe" />
+                  <Label
+                    htmlFor="generate-recipe"
+                    className="text-sm font-medium leading-none"
+                  >
+                    이미지 자동 생성
+                  </Label>
+                  <Checkbox id="generate-recipe" name="generateRecipe" />
+                  <Label
+                    htmlFor="generate-recipe"
+                    className="text-sm font-medium leading-none"
+                  >
+                    레시피 자동 생성
+                  </Label>
+                </div>
               </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              취소
-            </Button>
-            <Button type="submit" onClick={handleSaveEdit}>
-              저장
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setIsNewDialogOpen(false)}
+              >
+                <XCircle className="h-4 w-4" />
+                취소
+              </Button>
+              <Button
+                type="submit"
+                onClick={handleSaveEdit}
+                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+              >
+                <Save className="h-4 w-4" />
+                저장
+              </Button>
+            </DialogFooter>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -418,17 +447,31 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{menuToDelete?.name}" 메뉴의 레시피가 등록되어 있을 경우, 판매
+              "{oneToDelete?.name}" 메뉴의 레시피가 등록되어 있을 경우, 판매
               상태가 '판매중지'로 변경됩니다. 이 작업은 되돌릴 수 있지만, 다시
               활성화할 수 있습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setMenuToDelete(null)}>
-              취소
+            <AlertDialogCancel asChild>
+              <Button
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setOneToDelete(null)}
+              >
+                <XCircle className="h-4 w-4 group-hover:text-red-600 transition-colors" />
+                취소
+              </Button>
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              삭제 확인
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
+                onClick={confirmDelete}
+              >
+                <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
+                삭제 확인
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

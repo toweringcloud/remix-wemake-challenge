@@ -1,34 +1,94 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import {
+  Link,
+  useLoaderData,
+  type LoaderFunction,
+  type LoaderFunctionArgs,
+} from "react-router-dom";
 
 import type { Route } from "./+types/recipe-detail.page";
 import { PlaceholderImage } from "~/components/common/placeholder-image";
 import { useRoleStore } from "~/stores/user.store";
-import { recipesData } from "~/data/recipes.data";
+import { getCookieSession } from "~/utils/cookie.server";
+import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Recipe Detail | Caferium" },
   {
     name: "description",
-    content: "show detail information on a selected recipe",
+    content: "recipe detail",
   },
 ];
 
+export const loader: LoaderFunction = async ({
+  request,
+  params,
+}: LoaderFunctionArgs) => {
+  const session = getCookieSession(request.headers.get("Cookie"));
+  if (!session) throw new Response("Unauthorized", { status: 401 });
+  if (!session?.cafeId) return { cafe: null };
+  const cafeId = session.cafeId;
+  console.log("recipe.cafeId", cafeId);
+
+  const { recipeId } = params;
+  console.log("recipe.menuId", recipeId);
+
+  const { supabase } = createClient(request);
+  const { data } = await supabase
+    .from("recipes")
+    .select(
+      `
+      *,
+      menus(id, image_url),
+      recipe_ingredients (
+        quantity,
+        ingredients (
+          name
+        )
+      )
+    `
+    )
+    .eq("cafe_id", cafeId)
+    .eq("menu_id", recipeId)
+    .single();
+
+  if (!data) {
+    throw new Response("Recipe Not Found", { status: 404 });
+  }
+
+  const recipe: Recipe = {
+    id: data.menus.id,
+    name: data.name,
+    description: data.description,
+    ingredients: data.recipe_ingredients.map((i: any) => ({
+      name: i.ingredients.name,
+      amount: i.quantity,
+    })),
+    steps: data.steps,
+    imageUrl: data.menus.image_url,
+    videoUrl: data.video,
+    updatedAt: data.updated_at,
+  };
+  console.log("recipe.R", recipe);
+  return { recipe };
+};
+
+// 레시피(Recipe) 타입 정의
+type Recipe = {
+  id: number;
+  name: string;
+  description: string;
+  ingredients: [{ name: string; quantity: string }];
+  steps: string[];
+  [key: string]: any;
+};
+
 export default function RecipeDetailPage() {
   const { roleCode } = useRoleStore();
-  const { recipeId } = useParams();
 
-  // 실제 앱에서는 useParams의 recipeId를 사용해 API로 데이터를 가져옵니다.
-  // ✅ URL의 recipeId와 일치하는 레시피를 데이터 배열에서 찾습니다.
-  const recipe = recipesData.find((r) => r.id === recipeId);
-
-  if (!recipe) {
-    return (
-      <div className="p-6 text-center text-lg text-red-600">
-        레시피를 찾을 수 없습니다.
-      </div>
-    );
-  }
+  // const { recipe } = useLoaderData<typeof loader>();
+  const { recipe } = useLoaderData<Recipe>();
+  console.log("recipe.loaderData", recipe);
 
   // ✅ 이미지 로딩 실패를 기억하기 위한 state
   const [hasLoadError, setHasLoadError] = useState(false);
@@ -36,10 +96,10 @@ export default function RecipeDetailPage() {
   // ✅ imageUrl prop이 변경될 때마다 에러 상태를 초기화
   useEffect(() => {
     setHasLoadError(false);
-  }, [recipe.imageUrl]);
+  }, [recipe.videoUrl]);
 
   // ✅ 이미지가 없거나 로드 에러가 발생했는지 확인
-  const showFallback = hasLoadError || !recipe.imageUrl;
+  const showFallback = hasLoadError || !recipe.videoUrl;
 
   if (!recipe) {
     return (
@@ -105,12 +165,14 @@ export default function RecipeDetailPage() {
               필요한 재료
             </h2>
             <ul className="list-disc list-inside space-y-2">
-              {recipe.ingredients.map((ing, index) => (
-                <li key={index} className="text-gray-700">
-                  <span className="font-semibold">{ing.name}</span>:{" "}
-                  {ing.amount}
-                </li>
-              ))}
+              {recipe.ingredients.map(
+                (ing: { name: string; amount: number }, index: number) => (
+                  <li key={index} className="text-gray-700">
+                    <span className="font-semibold">{ing.name}</span>:{" "}
+                    {ing.amount}
+                  </li>
+                )
+              )}
             </ul>
           </div>
 
@@ -120,7 +182,7 @@ export default function RecipeDetailPage() {
               만드는 법
             </h2>
             <ol className="list-decimal list-inside space-y-3">
-              {recipe.steps.map((step, index) => (
+              {recipe.steps.map((step: string, index: number) => (
                 <li
                   key={index}
                   className="text-gray-700 leading-relaxed text-sm"

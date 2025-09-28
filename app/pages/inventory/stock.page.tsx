@@ -1,7 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, type LoaderFunction } from "react-router";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { Form, type LoaderFunction } from "react-router";
+import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -41,7 +51,7 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   return stocks;
 };
 
-// ✅ 1. 인벤토리(Stock) 데이터의 타입을 명확하게 정의합니다.
+// ✅ 1. 재고(Stock) 데이터 정의
 type Stock = {
   id: number;
   name: string;
@@ -50,11 +60,12 @@ type Stock = {
 };
 
 export default function StocksPage({ loaderData }: Route.ComponentProps) {
-  const navigate = useNavigate();
   const { roleCode } = useRoleStore();
+
+  // 재고 목록 조회
+  const [stocks] = useState<Stock[]>(loaderData || []);
   console.log("stocks.loaderData", loaderData);
 
-  const [stocks] = useState<Stock[]>(loaderData || []);
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
@@ -90,8 +101,17 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
   };
 
   // 재고 삭제
-  const handleDelete = (stockId: number) => {
-    alert(`재고그룹(${stockId})을 삭제합니다.`);
+  const [oneToDelete, setOneToDelete] = useState<Stock | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const handleDeleteClick = (menu: Stock) => {
+    setOneToDelete(menu);
+    setIsAlertOpen(true);
+  };
+  const confirmDelete = () => {
+    if (!oneToDelete) return;
+    console.log(`삭제 또는 비활성화 대상 : '${oneToDelete.name}'`);
+    setIsAlertOpen(false);
+    setOneToDelete(null);
   };
 
   return (
@@ -131,7 +151,7 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
                     수정
                   </button>
                   <button
-                    onClick={() => handleDelete(stock.id)}
+                    onClick={() => handleDeleteClick(stock)}
                     className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
                   >
                     <Trash2 size={14} />
@@ -144,7 +164,7 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
         ))}
       </div>
 
-      {/* 재고 그룹 등록 팝업 */}
+      {/* ✅ 재고 등록 팝업 */}
       <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -153,54 +173,68 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
               재고 그룹의 이름, 설명, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                이름
-              </Label>
-              <Input
-                id="name"
-                placeholder="재고 그룹 명"
-                onChange={handleInputChange}
-                className="col-span-3"
-                autoComplete="off"
-              />
+          <Form method="post">
+            <div className="grid gap-4 pt-2 pb-8">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  이름
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="재고 그룹 명"
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  설명
+                </Label>
+                <Input
+                  id="description"
+                  placeholder="재고 그룹 설명"
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="picture" className="text-right">
+                  이미지
+                </Label>
+                <Input
+                  id="picture"
+                  name="picture"
+                  type="file"
+                  className="col-span-3"
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                설명
-              </Label>
-              <Input
-                id="description"
-                placeholder="재고 그룹 설명"
-                onChange={handleInputChange}
-                className="col-span-3"
-                autoComplete="off"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="image" className="text-right">
-                이미지
-              </Label>
-              <Input id="image" type="file" className="col-span-3" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsNewDialogOpen(false)}
-            >
-              취소
-            </Button>
-            <Button type="submit" onClick={handleSaveNew}>
-              저장
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setIsNewDialogOpen(false)}
+              >
+                <XCircle className="h-4 w-4" />
+                취소
+              </Button>
+              <Button
+                type="submit"
+                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                onClick={handleSaveNew}
+              >
+                <Save className="h-4 w-4" />
+                저장
+              </Button>
+            </DialogFooter>
+          </Form>
         </DialogContent>
       </Dialog>
 
-      {/* 재고 그룹 수정 팝업 */}
+      {/* ✅ 재고 수정 팝업 */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -209,54 +243,103 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
               재고 그룹의 이름, 설명, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                이름
-              </Label>
-              <Input
-                id="name"
-                placeholder="재고 그룹 명"
-                value={selectedStock?.name || ""}
-                onChange={handleInputChange}
-                className="col-span-3"
-                autoComplete="off"
-              />
+          <Form method="post">
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  이름
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="재고 그룹 명"
+                  value={selectedStock?.name || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  설명
+                </Label>
+                <Input
+                  id="description"
+                  placeholder="재고 그룹 설명"
+                  value={selectedStock?.description || ""}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="picture" className="text-right">
+                  이미지
+                </Label>
+                <Input
+                  id="picture"
+                  name="picture"
+                  type="file"
+                  className="col-span-3"
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                설명
-              </Label>
-              <Input
-                id="description"
-                placeholder="재고 그룹 설명"
-                value={selectedStock?.description || ""}
-                onChange={handleInputChange}
-                className="col-span-3"
-                autoComplete="off"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="image" className="text-right">
-                이미지
-              </Label>
-              <Input id="image" type="file" className="col-span-3" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              취소
-            </Button>
-            <Button type="submit" onClick={handleSaveEdit}>
-              저장
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                <XCircle className="h-4 w-4" />
+                취소
+              </Button>
+              <Button
+                type="submit"
+                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                onClick={handleSaveEdit}
+              >
+                <Save className="h-4 w-4" />
+                저장
+              </Button>
+            </DialogFooter>
+          </Form>
         </DialogContent>
       </Dialog>
+
+      {/* ✅ 재고 삭제 팝업 */}
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{oneToDelete?.name}" 재고 내에 등록된 아이템이 없을 경우에만 삭제
+              가능합니다. 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setOneToDelete(null)}
+              >
+                <XCircle className="h-4 w-4 group-hover:text-red-600 transition-colors" />
+                취소
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
+                onClick={confirmDelete}
+              >
+                <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
+                삭제 확인
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
