@@ -1,10 +1,11 @@
+import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 import React, { useState } from "react";
 import {
   Form,
+  redirect,
   type LoaderFunction,
   type LoaderFunctionArgs,
 } from "react-router-dom";
-import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 
 import {
   AlertDialog,
@@ -41,13 +42,27 @@ export const meta: Route.MetaFunction = () => [
   { name: "description", content: "menu list" },
 ];
 
+// 메뉴 타입 정의
+interface Menu {
+  id: number;
+  category: string;
+  name: string;
+  description?: string;
+  isHot?: boolean;
+  price: number;
+  stock: number;
+  isActive: boolean;
+  imageUrl?: string;
+  [key: string]: any;
+}
+
 export const loader: LoaderFunction = async ({
   request,
   params,
 }: LoaderFunctionArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
   if (!session) throw new Response("Unauthorized", { status: 401 });
-  if (!session?.cafeId) return { cafe: null };
+  if (!session?.cafeId) return redirect("/login");
   const cafeId = session.cafeId;
   console.log("menus.cafeId", cafeId);
 
@@ -78,20 +93,6 @@ export const loader: LoaderFunction = async ({
     console.log("menus.R", menus);
     return menus;
   } else return [];
-};
-
-// 메뉴 타입 정의
-type Menu = {
-  id: number;
-  category: string;
-  name: string;
-  description?: string;
-  isHot?: boolean;
-  price: number;
-  stock: number;
-  isActive: boolean;
-  imageUrl?: string;
-  [key: string]: any;
 };
 
 export default function MenusPage({ loaderData }: Route.ComponentProps) {
@@ -164,7 +165,7 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-amber-800">
-          메뉴 ({menus[0].category})
+          메뉴 {menus && menus[0] ? "(" + menus[0].category + ")" : null}
         </h1>
 
         {roleCode === "MA" && (

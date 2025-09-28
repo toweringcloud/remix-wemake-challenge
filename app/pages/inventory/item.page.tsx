@@ -12,6 +12,7 @@ import {
 import type { Route } from "./+types/item.page";
 import { useRoleStore } from "~/stores/user.store";
 import {
+  redirect,
   useParams,
   type LoaderFunction,
   type LoaderFunctionArgs,
@@ -30,7 +31,7 @@ export const loader: LoaderFunction = async ({
 }: LoaderFunctionArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
   if (!session) throw new Response("Unauthorized", { status: 401 });
-  if (!session?.cafeId) return { cafe: null };
+  if (!session?.cafeId) return redirect("/login");
   const cafeId = session.cafeId;
   console.log("items.cafeId", cafeId);
 

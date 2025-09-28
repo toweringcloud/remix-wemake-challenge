@@ -1,11 +1,15 @@
+import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import {
   Form,
+  redirect,
+  useActionData,
   useNavigate,
+  useNavigation,
   type ActionFunction,
   type LoaderFunction,
 } from "react-router";
-import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
+import { z } from "zod";
 
 import {
   AlertDialog,
@@ -40,10 +44,19 @@ export const meta: Route.MetaFunction = () => [
   { name: "description", content: "product list" },
 ];
 
+// 상품 타입 정의
+interface Product {
+  id: number;
+  name: string;
+  description: string;
+  imageUrl: string;
+  [key: string]: unknown;
+}
+
 export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
   if (!session) throw new Response("Unauthorized", { status: 401 });
-  if (!session?.cafeId) return { cafe: null };
+  if (!session?.cafeId) return redirect("/login");
   const cafeId = session.cafeId;
   console.log("products.cafeId", cafeId);
 
@@ -66,57 +79,87 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   } else return [];
 };
 
-export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const formData = await request.formData();
-  const actionType = formData.get("actionType");
-  const cafeId = formData.get("cafeId");
-  const productId = formData.get("productId");
-  console.log("products.formData", formData);
+// ✅ 1. zod를 사용하여 유효성 검사 스키마를 정의합니다.
+const productSchema = z.object({
+  name: z.string().min(1, { message: "상품 이름은 필수입니다." }),
+  description: z.string().optional(),
+  id: z.string().optional(),
+});
 
-  if (!actionType || !cafeId || !productId) return;
+export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
+  const session = getCookieSession(request.headers.get("Cookie"));
+  if (!session) throw new Response("Unauthorized", { status: 401 });
+  if (!session?.cafeId) return redirect("/login");
+  const cafeId = session.cafeId;
+
+  const formData = await request.formData();
+  console.log("products.formData", formData);
+  const actionType = formData.get("actionType");
+  if (!actionType || !cafeId) return;
+
+  // ✅ 2. formData를 zod 스키마로 파싱합니다.
+  const submission = productSchema.safeParse(Object.fromEntries(formData));
+
+  // ✅ 3. 유효성 검사 실패 시, 에러 메시지를 클라이언트로 반환합니다.
+  if (!submission.success) {
+    return { errors: submission.error.flatten().fieldErrors };
+  }
+
+  const { name, description, id } = submission.data;
   const { supabase } = createClient(request);
 
-  switch (actionType) {
-    case "C":
-      const { data: resIns } = await supabase
-        .from("products")
-        .insert(formData)
-        .eq("cafe_id", cafeId as string);
-      console.log(`products.C`, resIns);
-      break;
+  if (actionType === "C") {
+    const { error } = await supabase
+      .from("products")
+      .insert({ name, description, cafe_id: cafeId });
 
-    case "U":
-      const { data: resUpd } = await supabase
-        .from("products")
-        .update(formData)
-        .eq("cafe_id", cafeId as string)
-        .eq("id", productId);
-      console.log(`products.U`, resUpd);
-      break;
-
-    // case "D":
-    //   const { data: resDel } = await supabase
-    //     .from("products")
-    //     .delete(formData)
-    //     .eq("cafe_id", cafeId as string)
-    //     .eq("id", productId);
-    //   console.log(`products.D`, resDel);
-    //   break;
+    if (error) throw error;
+    console.log(`products.C: cafe(${cafeId})`);
+    return { ok: true, action: actionType };
   }
-};
 
-type Product = {
-  id: number;
-  name: string;
-  description: string;
-  imageUrl: string;
-  [key: string]: unknown;
+  if (actionType === "U") {
+    const { error } = await supabase
+      .from("products")
+      .update({ name, description })
+      .eq("id", id)
+      .eq("cafe_id", cafeId);
+
+    if (error) throw error;
+    console.log(`products.U: cafe(${cafeId}), product(${id})`);
+    return { ok: true, action: actionType };
+  }
+
+  if (actionType === "D") {
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", id)
+      .eq("cafe_id", cafeId);
+
+    if (error) throw error;
+    console.log(`products.D: cafe(${cafeId}), product(${id})`);
+    return { ok: true, action: actionType };
+  }
+
+  return {
+    ok: false,
+    action: actionType,
+    error: "Invalid action type",
+    status: 400,
+  };
 };
 
 export default function ProductsPage({ loaderData }: Route.ComponentProps) {
-  const navigate = useNavigate();
   const { roleCode } = useRoleStore();
+  const navigate = useNavigate();
+  const navigation = useNavigation(); // ✅ 폼 제출 상태를 추적
+
+  // ✅ useActionData 훅으로 action의 반환값을 가져옵니다.
+  const actionData = useActionData() as {
+    ok?: boolean;
+    errors?: { name?: string[]; description?: string[] };
+  };
 
   // 상품 목록 조회
   const [products] = useState<Product[]>(loaderData || []);
@@ -141,19 +184,11 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
   const handleNewClick = () => {
     setIsNewDialogOpen(true);
   };
-  const handleSaveNew = () => {
-    console.log("products.saveNew:", selectedProduct);
-    setIsNewDialogOpen(false);
-  };
 
   // 상품 수정
   const handleEditClick = (product: Product) => {
     setSelectedProduct(product);
     setIsEditDialogOpen(true);
-  };
-  const handleSaveEdit = () => {
-    console.log("products.saveEdit:", selectedProduct);
-    setIsEditDialogOpen(false);
   };
 
   // 상품 삭제
@@ -177,6 +212,20 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
       navigate("/dashboard");
     }
   }, [roleCode, navigate]);
+
+  // ✅ 폼 제출이 완료되었는지 확인
+  const isSubmitting = navigation.state === "submitting";
+
+  // ✅ actionData나 isSubmitting 상태가 변경될 때마다 실행
+  useEffect(() => {
+    // 폼 제출이 끝났고(idle), 작업이 성공적으로 완료되었다면
+    if (!isSubmitting && actionData?.ok) {
+      // 모든 다이얼로그를 닫습니다.
+      setIsNewDialogOpen(false);
+      setIsEditDialogOpen(false);
+      setIsAlertOpen(false);
+    }
+  }, [actionData, isSubmitting]);
 
   return (
     <div className="p-6">
@@ -239,17 +288,27 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
           </DialogHeader>
           <Form method="post">
             <div className="grid gap-4 py-4">
+              {/* 등록(Create)임을 알리는 hidden input */}
+              <input type="hidden" name="actionType" value="C" />
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   이름
                 </Label>
                 <Input
                   id="name"
+                  name="name"
                   placeholder="상품 명"
                   onChange={handleInputChange}
                   className="col-span-3"
                   autoComplete="off"
                 />
+                {/* ✅ 이름 필드에 대한 에러 메시지 표시 */}
+                {actionData?.errors?.name && (
+                  <p className="col-start-2 col-span-3 text-sm text-red-500">
+                    {actionData.errors.name[0]}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">
@@ -257,11 +316,18 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 </Label>
                 <Input
                   id="description"
+                  name="description"
                   placeholder="상품 설명"
                   onChange={handleInputChange}
                   className="col-span-3"
                   autoComplete="off"
                 />
+                {/* ✅ 설명 필드에 대한 에러 메시지 표시 (필요 시) */}
+                {actionData?.errors?.description && (
+                  <p className="col-start-2 col-span-3 text-sm text-red-500">
+                    {actionData.errors.description[0]}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="picture" className="text-right">
@@ -275,26 +341,28 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 />
               </div>
             </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setIsNewDialogOpen(false)}
+              >
+                <XCircle className="h-4 w-4" />
+                취소
+              </Button>
+              {/* ✅ isSubmitting 상태를 사용해 버튼 비활성화 및 로딩 표시 */}
+              <Button
+                type="submit"
+                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                disabled={isSubmitting}
+              >
+                <Save className="h-4 w-4" />
+                {isSubmitting ? "저장 중..." : "저장"}
+              </Button>
+            </DialogFooter>
           </Form>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
-              onClick={() => setIsNewDialogOpen(false)}
-            >
-              <XCircle className="h-4 w-4" />
-              취소
-            </Button>
-            <Button
-              type="submit"
-              className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
-              onClick={handleSaveNew}
-            >
-              <Save className="h-4 w-4" />
-              저장
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -309,18 +377,30 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
           </DialogHeader>
           <Form method="post">
             <div className="grid gap-4 py-4">
+              {/* 수정(Update)임을 알리는 hidden input */}
+              <input type="hidden" name="actionType" value="U" />
+              {/* 수정할 상품의 ID를 전달하는 hidden input */}
+              <input type="hidden" name="id" value={selectedProduct?.id} />
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   이름
                 </Label>
                 <Input
                   id="name"
+                  name="name"
                   placeholder="상품 명"
                   value={selectedProduct?.name || ""}
                   onChange={handleInputChange}
                   className="col-span-3"
                   autoComplete="off"
                 />
+                {/* ✅ 이름 필드에 대한 에러 메시지 표시 */}
+                {actionData?.errors?.name && (
+                  <p className="col-start-2 col-span-3 text-sm text-red-500">
+                    {actionData.errors.name[0]}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">
@@ -328,12 +408,19 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 </Label>
                 <Input
                   id="description"
+                  name="description"
                   placeholder="상품 설명"
                   value={selectedProduct?.description || ""}
                   onChange={handleInputChange}
                   className="col-span-3"
                   autoComplete="off"
                 />
+                {/* ✅ 설명 필드에 대한 에러 메시지 표시 (필요 시) */}
+                {actionData?.errors?.description && (
+                  <p className="col-start-2 col-span-3 text-sm text-red-500">
+                    {actionData.errors.description[0]}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="picture" className="text-right">
@@ -347,26 +434,27 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 />
               </div>
             </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                <XCircle className="h-4 w-4" />
+                취소
+              </Button>
+              {/* ✅ isSubmitting 상태를 사용해 버튼 비활성화 및 로딩 표시 */}
+              <Button
+                type="submit"
+                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                disabled={isSubmitting}
+              >
+                <Save className="h-4 w-4" />
+                {isSubmitting ? "저장 중..." : "저장"}
+              </Button>
+            </DialogFooter>
           </Form>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              <XCircle className="h-4 w-4" />
-              취소
-            </Button>
-            <Button
-              type="submit"
-              className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
-              onClick={handleSaveEdit}
-            >
-              <Save className="h-4 w-4" />
-              저장
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -392,14 +480,22 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
               </Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Button
-                variant="destructive"
-                className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
-                onClick={confirmDelete}
-              >
-                <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
-                삭제 확인
-              </Button>
+              <Form method="post">
+                {/* 삭제(Delete)임을 알리는 hidden input */}
+                <input type="hidden" name="actionType" value="D" />
+                {/* 삭제할 상품의 ID를 전달하는 hidden input */}
+                <input type="hidden" name="id" value={oneToDelete?.id} />
+
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
+                  disabled={isSubmitting}
+                >
+                  <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
+                  {isSubmitting ? "처리 중..." : "삭제 확인"}
+                </Button>
+              </Form>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Link,
+  redirect,
   useLoaderData,
   type LoaderFunction,
   type LoaderFunctionArgs,
@@ -26,12 +27,12 @@ export const loader: LoaderFunction = async ({
 }: LoaderFunctionArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
   if (!session) throw new Response("Unauthorized", { status: 401 });
-  if (!session?.cafeId) return { cafe: null };
+  if (!session?.cafeId) return redirect("/login");
   const cafeId = session.cafeId;
-  console.log("recipe.cafeId", cafeId);
+  console.log("recipe-detail.cafeId", cafeId);
 
   const { recipeId } = params;
-  console.log("recipe.menuId", recipeId);
+  console.log("recipe-detail.menuId", recipeId);
 
   const { supabase } = createClient(request);
   const { data } = await supabase
@@ -69,7 +70,7 @@ export const loader: LoaderFunction = async ({
     videoUrl: data.video,
     updatedAt: data.updated_at,
   };
-  console.log("recipe.R", recipe);
+  console.log("recipe-detail.R", recipe);
   return { recipe };
 };
 

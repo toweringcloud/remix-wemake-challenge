@@ -29,7 +29,10 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   // });
 
   const { supabase } = createClient(request);
-  const { data: cafes } = await supabase.from("cafes").select();
+  const { data: cafes } = await supabase
+    .from("cafes")
+    .select()
+    .order("created_at");
   console.log("cafes", cafes);
 
   if (cafes && cafes.length > 0) {

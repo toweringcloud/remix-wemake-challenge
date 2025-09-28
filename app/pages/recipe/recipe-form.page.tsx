@@ -6,6 +6,7 @@ import {
   type LoaderFunctionArgs,
   type LoaderFunction,
   useLoaderData,
+  redirect,
 } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 
@@ -29,12 +30,12 @@ export const loader: LoaderFunction = async ({
 }: LoaderFunctionArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
   if (!session) throw new Response("Unauthorized", { status: 401 });
-  if (!session?.cafeId) return { cafe: null };
+  if (!session?.cafeId) return redirect("/login");
   const cafeId = session.cafeId;
-  console.log("recipe.cafeId", cafeId);
+  console.log("recipe-form.cafeId", cafeId);
 
   const { recipeId } = params;
-  console.log("recipe.menuId", recipeId);
+  console.log("recipe-form.menuId", recipeId);
 
   // 레시피 등록
   if (!recipeId) return {};
@@ -76,7 +77,7 @@ export const loader: LoaderFunction = async ({
     videoUrl: data.video,
     updatedAt: data.updated_at,
   };
-  console.log("recipe.R", recipe);
+  console.log("recipe-form.R", recipe);
   return { recipe };
 };
 

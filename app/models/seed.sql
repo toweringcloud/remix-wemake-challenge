@@ -17,34 +17,29 @@ TRUNCATE TABLE cafes RESTART IDENTITY CASCADE;
 ------------------------------------------------------------------------------------
 -- 1. 카페 삽입
 INSERT INTO cafes (id, name, description, headline, body) VALUES
-  ('a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0', '어반 그라인드', '도심 속의 현대적인 커피 공간', '최고급 원두로 내린 스페셜티 커피', '매일 아침 직접 로스팅한 신선한 원두를 사용합니다.');
+  ('1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c', '숲속의 작은 집', '자연 속에서 즐기는 힐링 북카페', '책 한 권의 여유와 향긋한 핸드드립 커피', '통유리 너머로 사계절을 감상할 수 있는 조용한 공간입니다. 직접 만든 디저트와 함께 독서의 즐거움을 느껴보세요.'),
+  ('7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d', '오션 브리즈', '해변가에 위치한 빈티지 서프 카페', '파도 소리와 함께 즐기는 시원한 콜드브루', '서핑을 사랑하는 주인장이 운영하는 자유로운 분위기의 카페입니다. 신선한 해산물로 만든 샌드위치가 인기 메뉴입니다.'),
+  ('3e4f5a6b-7c8d-9e0f-1a2b-3c4d5e6f7a8b', '미드나잇 로스터리', '저녁에 더 빛나는 심야 로스터리 카페', '밤을 닮은 깊고 진한 다크 로스팅 원두', '늦은 시간까지 커피와 음악, 대화를 즐길 수 있는 아지트 같은 공간입니다. 바리스타의 시그니처 칵테일도 경험해보세요.'),
+  ('9c8b7a6d-5f4e-3d2c-1b0a-9f8e7d6c5b4a', '고양이 찻집', '아늑한 다락방 컨셉의 고양이 티룸', '귀여운 고양이들과 함께하는 티타임', '다양한 종류의 홍차와 허브티를 고양이 모양의 찻잔에 담아 드립니다. 수익금의 일부는 유기묘를 위해 사용됩니다.');
 
 -- SA, MA, BA 역할에 맞는 아바타 URL과 함께 사용자 데이터를 다시 삽입합니다.
-INSERT INTO users (id, role, auth_code, mobile, avatar_url, cafe_id) VALUES
-  (
-    'f3d1dab7-3a98-9ab3-ac10-4a233e7fa6f5', 
-    'SA', 
-    'cafes001', 
-    '010-1111-1111', 
-    'https://storage.googleapis.com/proudcity/mebanenc/uploads/2021/03/placeholder-image.png', -- SA (System Admin) 아바타
-    'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'
-  ),
-  (
-    'a4e2ebc8-4b09-0bc4-bd21-5b344f8ab7a6', 
-    'MA', 
-    'cafem001', 
-    '010-2222-2222', 
-    'https://storage.googleapis.com/proudcity/mebanenc/uploads/2021/03/placeholder-image.png', -- MA (Cafe Manager) 아바타
-    'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'
-  ),
-  (
-    'b5f3fcd9-5c10-1cd5-ce32-6c455a9bc8b7', 
-    'BA', 
-    'cafeb001', 
-    '010-3333-3333', 
-    'https://storage.googleapis.com/proudcity/mebanenc/uploads/2021/03/placeholder-image.png', -- BA (Barista) 아바타
-    'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'
-  );
+INSERT INTO users (id, role, auth_code, cafe_id) VALUES
+  -- 숲속의 작은 집
+  ('1c1c1c1c-1c1c-1c1c-1c1c-1c1c1c1c1c1c', 'SA', 'cafes123', '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c'),
+  ('1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a', 'MA', 'cafem123', '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c'),
+  ('1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b', 'BA', 'cafeb123', '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c'),
+  -- 오션 브리즈
+  ('2c2c2c2c-2c2c-2c2c-2c2c-2c2c2c2c2c2c', 'SA', 'cafes234', '7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d'),
+  ('2a2a2a2a-2a2a-2a2a-2a2a-2a2a2a2a2a2a', 'MA', 'cafem234', '7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d'),
+  ('2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b', 'BA', 'cafeb234', '7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d'),
+  -- 미드나잇 로스터리
+  ('3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c', 'SA', 'cafes345', '3e4f5a6b-7c8d-9e0f-1a2b-3c4d5e6f7a8b'),
+  ('3a3a3a3a-3a3a-3a3a-3a3a-3a3a3a3a3a3a', 'MA', 'cafem345', '3e4f5a6b-7c8d-9e0f-1a2b-3c4d5e6f7a8b'),
+  ('3b3b3b3b-3b3b-3b3b-3b3b-3b3b3b3b3b3b', 'BA', 'cafeb345', '3e4f5a6b-7c8d-9e0f-1a2b-3c4d5e6f7a8b'),
+  -- 고양이 찻집
+  ('4c4c4c4c-4c4c-4c4c-4c4c-4c4c4c4c4c4c', 'SA', 'cafes456', '9c8b7a6d-5f4e-3d2c-1b0a-9f8e7d6c5b4a'),
+  ('4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a', 'MA', 'cafem456', '9c8b7a6d-5f4e-3d2c-1b0a-9f8e7d6c5b4a'),
+  ('4b4b4b4b-4b4b-4b4b-4b4b-4b4b4b4b4b4b', 'BA', 'cafeb456', '9c8b7a6d-5f4e-3d2c-1b0a-9f8e7d6c5b4a');
 
 
 -- 2. BIGINT 기반 테이블 데이터 시딩 (Product, Menu, Recipe, Ingredient, Item 등)
@@ -55,7 +50,7 @@ INSERT INTO products (name, description, cafe_id)
 SELECT 
   v.name AS name,
   v.description AS description,
-  'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0' AS cafe_id
+  '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c' AS cafe_id
 FROM (
   VALUES
   ('커피', '에스프레소 기반의 다양한 커피 음료'),
@@ -90,7 +85,7 @@ FROM (
     ('미숫가루 라떼', false, '라떼')
 ) AS v(name, is_hot, product_name)
 JOIN products p ON v.product_name = p.name
-WHERE p.cafe_id = 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0';
+WHERE p.cafe_id = '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c';
 
 
 -- 레시피(Recipes) 삽입 후 ID와 이름 반환
@@ -127,7 +122,7 @@ FROM (
 ) AS v(name, is_hot, description, product_name)
 JOIN menus m ON v.name = m.name AND v.is_hot = m.is_hot
 JOIN products p ON v.product_name = p.name
-WHERE m.cafe_id = 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0';
+WHERE m.cafe_id = '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c';
 
 -- 레시피(Recipes) 조리 단계 업데이트
 -- 커피
@@ -154,7 +149,7 @@ UPDATE recipes SET steps = ARRAY['블렌더에 미숫가루(40g), 우유(250ml),
 INSERT INTO ingredients (name, cafe_id) 
 SELECT 
   v.name AS name,
-  'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0' AS cafe_id
+  '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c' AS cafe_id
 FROM (
   VALUES
     -- 커피 & 공통 재료
@@ -240,8 +235,8 @@ FROM (
 ) AS v(recipe_name, ingredient_name, quantity)
 JOIN recipes r ON v.recipe_name = r.name
 JOIN ingredients i ON v.ingredient_name = i.name
-WHERE r.cafe_id = 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0'
-  AND i.cafe_id = 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0';
+WHERE r.cafe_id = '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c'
+  AND i.cafe_id = '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c';
 
 
 -- 재고 그룹(stocks)을 먼저 삽입하고, 생성된 id와 name을 반환합니다.
@@ -249,7 +244,7 @@ INSERT INTO stocks (name, description, cafe_id) VALUES
 SELECT 
   v.name AS name,
   v.description AS description, 
-  'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0' AS cafe_id,
+  '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c' AS cafe_id,
 FROM (
   VALUES
     ('원두', '커피 추출에 사용되는 원두'),
@@ -300,4 +295,4 @@ FROM (
     ('일회용품', '냅킨', 15, '팩')
 ) AS v(stock_name, name, count, unit)
 JOIN stocks s ON v.stock_name = s.name
-WHERE s.cafe_id = 'a8e6e5a2-8b43-4b68-b765-9b788f2ab1a0';
+WHERE s.cafe_id = '1f9a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c';

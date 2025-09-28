@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Form, type LoaderFunction } from "react-router";
+import { Form, redirect, type LoaderFunction } from "react-router";
 import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 
 import {
@@ -38,7 +38,7 @@ export const meta: Route.MetaFunction = () => [
 export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
   if (!session) throw new Response("Unauthorized", { status: 401 });
-  if (!session?.cafeId) return { cafe: null };
+  if (!session?.cafeId) return redirect("/login");
   const cafeId = session.cafeId;
   console.log("stocks.cafeId", cafeId);
 
