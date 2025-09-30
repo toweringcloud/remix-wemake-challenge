@@ -29,16 +29,15 @@ $ bun i
 
 ```sh
 $ cat .env
-API_BASE_URL=localhost:9000
-DATABASE_URL=
+DATABASE_URL="postgresql://{id}:{pw}@{host}:{port}/{dbname}"
 MODE=DEV
 OPENAI_API_KEY=
 RESEND_API_KEY=
 SUPABASE_ACCESS_TOKEN=
 SUPABASE_ANON_KEY=
-SUPABASE_URL=https://{your_project}.supabase.co
-VITE_API_BASE_URL=http://localhost:9000
-VITE_APP_PORT=5173
+SUPABASE_URL="https://{your_project}.supabase.co"
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 ```
 
 - generate db schema
@@ -120,12 +119,21 @@ $ react-router dev
   ➜  press h + enter to show help
 ```
 
-- run bun app with production mode
+- deploy docker app with production mode
 
 ```sh
 $ bun run build
 $ docker build -t my-app .
 $ docker run -p 9000:3000 my-app
+```
+
+- deploy fly.io app with production mode
+
+```sh
+$ curl -L https://fly.io/install.sh | sh
+$ fly launch
+$ fly secret
+$ fly deploy
 ```
 
 - run tunnel client
@@ -147,3 +155,8 @@ $ cloudflared tunnel --url http://localhost:5173
 2025-09-17T17:21:11Z INF Version 2025.8.1 (Checksum b5d598b00cc3a28cabc5812d9f762819334614bae452db4e7f23eefe7b081556)
 2025-09-17T17:21:11Z INF GOOS: windows, GOVersion: go1.24.2, GoArch: amd64
 ```
+
+### test
+
+- download sample video file
+  - [Pexcel](https://www.pexels.com)

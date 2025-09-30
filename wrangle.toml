@@ -1,0 +1,15 @@
+# Cloudflare Pages 배포를 위한 Wrangler 설정 파일
+
+# 앱의 이름입니다. Cloudflare 대시보드에서 보여지며, <APP-NAME>.pages.dev 형태의 기본 도메인을 갖게 됩니다.
+name = "remix-wemake-challenge"
+
+# Cloudflare의 최신 기능을 사용하기 위한 호환성 날짜입니다.
+compatibility_date = "2024-04-05"
+
+# [pages_build] 섹션은 Cloudflare Pages에 프로젝트를 어떻게 빌드하고 배포할지 지시합니다.
+[pages_build]
+# # 프로젝트를 빌드하는 명령어입니다. package.json의 "build" 스크립트를 실행합니다.
+build_command = "npm run build"
+# # 빌드 결과물이 생성되는 디렉토리입니다. Vite는 보통 'dist' 폴더에 결과물을 생성합니다.
+# # 만약 다른 폴더(예: public, build)라면 이 값을 수정해야 합니다.
+build_output_dir = "dist"
