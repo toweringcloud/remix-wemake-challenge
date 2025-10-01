@@ -1,9 +1,11 @@
+import { v4 as uuidv4 } from "uuid";
 import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Form,
   redirect,
   useActionData,
+  useLoaderData,
   useNavigate,
   useNavigation,
   type ActionFunction,
@@ -32,6 +34,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Switch } from "@radix-ui/react-switch";
 
 import type { Route } from "./+types/product.page";
 import { ProductCard } from "~/components/product-card";
@@ -49,7 +52,8 @@ interface Product {
   id: number;
   name: string;
   description: string;
-  imageUrl: string;
+  imageUrl: string | null;
+  updatedAt: string;
   [key: string]: unknown;
 }
 
@@ -64,7 +68,8 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   const { data } = await supabase
     .from("products")
     .select()
-    .eq("cafe_id", cafeId);
+    .eq("cafe_id", cafeId)
+    .order("name");
 
   if (data) {
     const products: Product[] = data.map((item: any) => ({
@@ -74,12 +79,12 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
       imageUrl: item.image_url,
       updatedAt: item.updated_at,
     }));
-    console.log("products.R", products);
+    // console.log("products.R", products);
     return products;
   } else return [];
 };
 
-// ✅ 1. zod를 사용하여 유효성 검사 스키마를 정의합니다.
+// ✅ zod를 사용하여 유효성 검사 스키마를 정의합니다.
 const productSchema = z.object({
   name: z.string().min(1, { message: "상품 이름은 필수입니다." }),
   description: z.string().optional(),
@@ -87,70 +92,290 @@ const productSchema = z.object({
 });
 
 export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
-  const session = getCookieSession(request.headers.get("Cookie"));
-  if (!session) throw new Response("Unauthorized", { status: 401 });
-  if (!session?.cafeId) return redirect("/login");
-  const cafeId = session.cafeId;
+  try {
+    const session = getCookieSession(request.headers.get("Cookie"));
+    if (!session) throw new Response("Unauthorized", { status: 401 });
+    if (!session?.cafeId) return redirect("/login");
 
-  const formData = await request.formData();
-  console.log("products.formData", formData);
-  const actionType = formData.get("actionType");
-  if (!actionType || !cafeId) return;
+    const cafeId = session.cafeId;
+    const formData = await request.formData();
+    const actionType = formData.get("actionType");
 
-  // ✅ 2. formData를 zod 스키마로 파싱합니다.
-  const submission = productSchema.safeParse(Object.fromEntries(formData));
+    if (!actionType) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Invalid action type" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
-  // ✅ 3. 유효성 검사 실패 시, 에러 메시지를 클라이언트로 반환합니다.
-  if (!submission.success) {
-    return { errors: submission.error.flatten().fieldErrors };
+    // ✅ formData 유효성 검사 실패 시, 에러 메시지를 클라이언트로 반환합니다.
+    const submission = productSchema.safeParse(Object.fromEntries(formData));
+    if (!submission.success) {
+      return new Response(
+        JSON.stringify({ errors: submission.error.flatten().fieldErrors }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { name, description, id } = submission.data;
+    const { supabase } = createClient(request);
+
+    // --- C: 생성 (Create) ---
+    if (actionType === "C") {
+      let imageUrl: string | null = null;
+      const imageFile = formData.get("image") as File;
+
+      if (imageFile && imageFile.size > 0) {
+        const filePath = `${cafeId}/product/${uuidv4()}-${imageFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(filePath, imageFile);
+
+        if (uploadError) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              errors: { image: ["이미지 업로드 실패"] },
+            }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        imageUrl = supabase.storage.from("images").getPublicUrl(filePath)
+          .data.publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("products")
+        .insert({ name, description, image_url: imageUrl, cafe_id: cafeId });
+
+      if (error) {
+        // Supabase 에러 발생 시 Response 객체로 반환
+        return new Response(
+          JSON.stringify({ ok: false, error: error.message }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      console.log(`products.C: cafe(${cafeId})`);
+      return new Response(JSON.stringify({ ok: true, action: actionType }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // --- U: 수정 (Update) ---
+    if (actionType === "U") {
+      if (!id) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "ID is required for update" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const updateData: {
+        name?: string;
+        description?: string;
+        image_url?: string | null; // null 허용
+      } = { name, description };
+      const imageFile = formData.get("image") as File;
+      const removeImage = formData.get("removeImage") === "true"; // 이미지 삭제 스위치 값
+
+      // 기존 이미지 URL 조회 (삭제를 위해)
+      const { data: existingProduct, error: fetchError } = await supabase
+        .from("products")
+        .select("image_url")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !existingProduct) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Product not found" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // 새 이미지 업로드 또는 기존 이미지 삭제 처리
+      if (imageFile && imageFile.size > 0 && !removeImage) {
+        // 새 이미지 업로드 전, 기존 이미지 삭제
+        if (existingProduct.image_url) {
+          const oldFilePath = existingProduct.image_url.split("/images/")[1];
+          await supabase.storage.from("images").remove([oldFilePath]);
+        }
+
+        // 새 이미지 업로드
+        const filePath = `${cafeId}/product/${uuidv4()}-${imageFile.name}`;
+        // const filePath = `${cafeId}/product/${randomUUID()}-${imageFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(filePath, imageFile);
+
+        if (uploadError) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              errors: { image: ["새 이미지 업로드 실패"] },
+            }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+        updateData.image_url = supabase.storage
+          .from("images")
+          .getPublicUrl(filePath).data.publicUrl;
+      } else if (removeImage && existingProduct.image_url) {
+        // 이미지 삭제 요청 처리
+        const oldFilePath = existingProduct.image_url.split("/images/")[1];
+        await supabase.storage.from("images").remove([oldFilePath]);
+        updateData.image_url = null; // DB에서도 이미지 URL 제거
+      } else if (
+        imageFile.size === 0 &&
+        !removeImage &&
+        existingProduct.image_url
+      ) {
+        // 이미지 파일이 없고, 삭제 요청도 없으면 기존 이미지 유지
+        updateData.image_url = existingProduct.image_url;
+      } else if (
+        imageFile.size === 0 &&
+        !removeImage &&
+        !existingProduct.image_url
+      ) {
+        // 이미지 파일이 없고, 삭제 요청도 없고, 기존 이미지도 없으면 null 유지
+        updateData.image_url = null;
+      }
+
+      const { error } = await supabase
+        .from("products")
+        .update(updateData)
+        .eq("id", id)
+        .eq("cafe_id", cafeId);
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ ok: false, error: error.message }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      console.log(`products.U: cafe(${cafeId}), product(${id})`);
+      return new Response(JSON.stringify({ ok: true, action: actionType }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // --- D: 삭제 (Delete) ---
+    if (actionType === "D") {
+      if (!id) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "ID is required for deletion" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const { data: productToDelete, error: selectError } = await supabase
+        .from("products")
+        .select("image_url, menus(id)") // 연결된 메뉴가 있는지 확인
+        .eq("id", id)
+        .single();
+
+      if (selectError || !productToDelete) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Product not found" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      if (productToDelete.menus && productToDelete.menus.length > 0) {
+        // ✅ 관련 메뉴가 있으면 삭제 거부
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: "이 상품에 연결된 메뉴가 있어 삭제할 수 없습니다.",
+          }),
+          {
+            status: 409,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      if (productToDelete.image_url) {
+        const filePath = productToDelete.image_url.split("/images/")[1];
+        await supabase.storage.from("images").remove([filePath]);
+      }
+
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", id)
+        .eq("cafe_id", cafeId);
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ ok: false, error: error.message }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      console.log(`products.D: cafe(${cafeId}), product(${id})`);
+      return new Response(JSON.stringify({ ok: true, action: actionType }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  } catch (outerError: any) {
+    // ✅ 모든 예외를 최종적으로 catch
+    console.error("Unhandled error in action function:", outerError);
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: "서버 내부 오류 발생. 콘솔을 확인하세요.",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
-
-  const { name, description, id } = submission.data;
-  const { supabase } = createClient(request);
-
-  if (actionType === "C") {
-    const { error } = await supabase
-      .from("products")
-      .insert({ name, description, cafe_id: cafeId });
-
-    if (error) throw error;
-    console.log(`products.C: cafe(${cafeId})`);
-    return { ok: true, action: actionType };
-  }
-
-  if (actionType === "U") {
-    const { error } = await supabase
-      .from("products")
-      .update({ name, description })
-      .eq("id", id)
-      .eq("cafe_id", cafeId);
-
-    if (error) throw error;
-    console.log(`products.U: cafe(${cafeId}), product(${id})`);
-    return { ok: true, action: actionType };
-  }
-
-  if (actionType === "D") {
-    const { error } = await supabase
-      .from("products")
-      .delete()
-      .eq("id", id)
-      .eq("cafe_id", cafeId);
-
-    if (error) throw error;
-    console.log(`products.D: cafe(${cafeId}), product(${id})`);
-    return { ok: true, action: actionType };
-  }
-
-  return {
-    ok: false,
-    action: actionType,
-    error: "Invalid action type",
-    status: 400,
-  };
 };
 
-export default function ProductsPage({ loaderData }: Route.ComponentProps) {
+// export default function ProductsPage({ loaderData }: Route.ComponentProps) {
+export default function ProductsPage() {
+  // 상품 목록 조회
+  // const [products] = useState<Product[]>(loaderData || []);
+  const products = useLoaderData() as Product[];
+  console.log("products.loaderData", products);
+
   const { roleCode } = useRoleStore();
   const navigate = useNavigate();
   const navigation = useNavigation(); // ✅ 폼 제출 상태를 추적
@@ -158,52 +383,49 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
   // ✅ useActionData 훅으로 action의 반환값을 가져옵니다.
   const actionData = useActionData() as {
     ok?: boolean;
-    errors?: { name?: string[]; description?: string[] };
+    errors?: { name?: string[]; description?: string[]; image?: string[] };
+    error?: string;
   };
-
-  // 상품 목록 조회
-  const [products] = useState<Product[]>(loaderData || []);
-  console.log("products.loaderData", loaderData);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isRemoveImage, setIsRemoveImage] = useState(false);
+  const [productName, setProductName] = useState("");
+  const [productDescription, setProductDescription] = useState("");
 
-  // 폼 입력 값 업데이트
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    if (selectedProduct) {
-      setSelectedProduct({
-        ...selectedProduct,
-        [id]: value,
-      });
+  // 파일 입력 Ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ✅ 폼 제출이 완료되었는지 확인
+  const isSubmitting = navigation.state === "submitting";
+
+  // ✅ actionData나 isSubmitting 상태가 변경될 때마다 실행
+  useEffect(() => {
+    // 액션 데이터 로깅 추가: action 함수에서 에러 메시지를 반환하면 여기에 찍힙니다.
+    if (actionData) {
+      console.log("Action Data received:", actionData);
+      if (actionData.ok === false) {
+        alert(actionData.error || actionData.errors?.image?.[0] || "작업 실패");
+      }
     }
-  };
 
-  // 상품 등록
-  const handleNewClick = () => {
-    setIsNewDialogOpen(true);
-  };
-
-  // 상품 수정
-  const handleEditClick = (product: Product) => {
-    setSelectedProduct(product);
-    setIsEditDialogOpen(true);
-  };
-
-  // 상품 삭제
-  const [oneToDelete, setOneToDelete] = useState<Product | null>(null);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const handleDeleteClick = (menu: Product) => {
-    setOneToDelete(menu);
-    setIsAlertOpen(true);
-  };
-  const confirmDelete = () => {
-    if (!oneToDelete) return;
-    console.log(`삭제 또는 비활성화 대상 : '${oneToDelete.name}'`);
-    setIsAlertOpen(false);
-    setOneToDelete(null);
-  };
+    // 폼 제출이 끝났고(idle), 작업이 성공적으로 완료되었다면
+    if (!isSubmitting && actionData?.ok) {
+      // 모든 다이얼로그를 닫습니다.
+      setIsNewDialogOpen(false);
+      setIsEditDialogOpen(false);
+      setIsAlertOpen(false);
+      setImagePreview(null);
+      setIsRemoveImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      // 성공적으로 작업 완료 후, 페이지를 다시 로드하여 최신 데이터 반영
+      navigate(".", { replace: true });
+    }
+  }, [actionData, isSubmitting, navigate]);
 
   // 접근 권한 확인
   useEffect(() => {
@@ -213,35 +435,88 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
     }
   }, [roleCode, navigate]);
 
-  // ✅ 폼 제출이 완료되었는지 확인
-  const isSubmitting = navigation.state === "submitting";
+  // 상품 등록
+  const handleNewClick = () => {
+    setSelectedProduct(null); // 새 상품 등록 시 기존 선택 상품 초기화
+    setImagePreview(null); // 미리보기 초기화
+    setIsNewDialogOpen(true);
+  };
 
-  // ✅ actionData나 isSubmitting 상태가 변경될 때마다 실행
-  useEffect(() => {
-    // 폼 제출이 끝났고(idle), 작업이 성공적으로 완료되었다면
-    if (!isSubmitting && actionData?.ok) {
-      // 모든 다이얼로그를 닫습니다.
-      setIsNewDialogOpen(false);
-      setIsEditDialogOpen(false);
-      setIsAlertOpen(false);
+  // 상품 수정
+  const handleEditClick = (product: Product) => {
+    setSelectedProduct(product);
+    setImagePreview(product.imageUrl); // 기존 이미지 미리보기 설정
+    setIsRemoveImage(false); // 수정 시 기본은 이미지 유지
+    setIsEditDialogOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setIsRemoveImage(false); // 새 파일 선택 시 이미지 삭제 스위치 비활성화
+    } else {
+      setImagePreview(selectedProduct?.imageUrl || null); // 파일 선택 취소 시 기존 이미지로 돌아감
     }
-  }, [actionData, isSubmitting]);
+  };
+
+  const handleRemoveImageToggle = (checked: boolean) => {
+    setIsRemoveImage(checked);
+    if (checked) {
+      setImagePreview(null); // 삭제 선택 시 미리보기 제거
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // 파일 인풋 초기화
+      }
+    } else {
+      setImagePreview(selectedProduct?.imageUrl || null); // 삭제 해제 시 기존 이미지로 복원
+    }
+  };
+
+  // 폼 제출 핸들러 (디버깅용)
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    console.log("Form submission started!");
+    const formData = new FormData(event.currentTarget);
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+    // file input의 파일 정보도 확인
+    const imageFile = formData.get("image") as File;
+    if (imageFile) {
+      console.log(
+        "Image File:",
+        imageFile.name,
+        imageFile.size,
+        imageFile.type
+      );
+    }
+  };
+
+  // 상품 삭제
+  const [oneToDelete, setOneToDelete] = useState<Product | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const handleDeleteClick = (menu: Product) => {
+    setOneToDelete(menu);
+    setIsAlertOpen(true);
+  };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-amber-800">상품</h1>
 
-        {roleCode === "SA" ||
-          (roleCode === "MA" && (
-            <button
-              className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
-              onClick={() => handleNewClick()}
-            >
-              <Plus className="h-4 w-4" />
-              등록
-            </button>
-          ))}
+        {["SA", "MA"].includes(roleCode!) && (
+          <button
+            className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
+            onClick={handleNewClick}
+          >
+            <Plus className="h-4 w-4" />
+            등록
+          </button>
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {products.map((product) => (
@@ -250,10 +525,9 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
             id={product.id.toString()}
             name={product.name}
             description={product.description}
-            imageUrl={product.imageUrl}
+            imageUrl={product.imageUrl || ""}
             action={
-              roleCode === "SA" ||
-              (roleCode === "MA" && (
+              ["SA", "MA"].includes(roleCode!) && (
                 // 매니저일 경우: 수정/삭제 버튼
                 <div className="flex items-center gap-2 ml-auto -mb-2">
                   <button
@@ -271,7 +545,7 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                     삭제
                   </button>
                 </div>
-              ))
+              )
             }
           />
         ))}
@@ -286,7 +560,11 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
               상품의 이름, 설명, 이미지를 등록합니다.
             </DialogDescription>
           </DialogHeader>
-          <Form method="post">
+          <Form
+            method="post"
+            encType="multipart/form-data"
+            onSubmit={handleFormSubmit}
+          >
             <div className="grid gap-4 py-4">
               {/* 등록(Create)임을 알리는 hidden input */}
               <input type="hidden" name="actionType" value="C" />
@@ -299,9 +577,9 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                   id="name"
                   name="name"
                   placeholder="상품 명"
-                  onChange={handleInputChange}
                   className="col-span-3"
                   autoComplete="off"
+                  defaultValue=""
                 />
                 {/* ✅ 이름 필드에 대한 에러 메시지 표시 */}
                 {actionData?.errors?.name && (
@@ -318,9 +596,9 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                   id="description"
                   name="description"
                   placeholder="상품 설명"
-                  onChange={handleInputChange}
                   className="col-span-3"
                   autoComplete="off"
+                  defaultValue=""
                 />
                 {/* ✅ 설명 필드에 대한 에러 메시지 표시 (필요 시) */}
                 {actionData?.errors?.description && (
@@ -330,16 +608,33 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 )}
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="picture" className="text-right">
+                <Label htmlFor="image" className="text-right">
                   이미지
                 </Label>
                 <Input
-                  id="picture"
-                  name="picture"
+                  id="image"
+                  name="image"
                   type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
                   className="col-span-3"
                 />
+                {actionData?.errors?.image && (
+                  <p className="col-start-2 col-span-3 text-sm text-red-500">
+                    {actionData.errors.image[0]}
+                  </p>
+                )}
               </div>
+              {/* 이미지 미리보기 */}
+              {imagePreview && (
+                <div className="col-start-2 col-span-3">
+                  <img
+                    src={imagePreview}
+                    alt="Image Preview"
+                    className="max-h-32 object-contain border rounded-md"
+                  />
+                </div>
+              )}
             </div>
 
             <DialogFooter>
@@ -375,7 +670,11 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
               상품의 이름, 설명, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
-          <Form method="post">
+          <Form
+            method="post"
+            encType="multipart/form-data"
+            onSubmit={handleFormSubmit}
+          >
             <div className="grid gap-4 py-4">
               {/* 수정(Update)임을 알리는 hidden input */}
               <input type="hidden" name="actionType" value="U" />
@@ -390,8 +689,7 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                   id="name"
                   name="name"
                   placeholder="상품 명"
-                  value={selectedProduct?.name || ""}
-                  onChange={handleInputChange}
+                  defaultValue={selectedProduct?.name || ""}
                   className="col-span-3"
                   autoComplete="off"
                 />
@@ -410,8 +708,7 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                   id="description"
                   name="description"
                   placeholder="상품 설명"
-                  value={selectedProduct?.description || ""}
-                  onChange={handleInputChange}
+                  defaultValue={selectedProduct?.description || ""}
                   className="col-span-3"
                   autoComplete="off"
                 />
@@ -423,15 +720,56 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
                 )}
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="picture" className="text-right">
+                <Label htmlFor="image" className="text-right">
                   이미지
                 </Label>
                 <Input
-                  id="picture"
-                  name="picture"
+                  id="image"
+                  name="image"
                   type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  disabled={isRemoveImage} // 이미지 삭제 선택 시 비활성화
                   className="col-span-3"
                 />
+                {actionData?.errors?.image && (
+                  <p className="col-start-2 col-span-3 text-sm text-red-500">
+                    {actionData.errors.image[0]}
+                  </p>
+                )}
+              </div>
+              {/* 이미지 미리보기 */}
+              {imagePreview && (
+                <div className="col-start-2 col-span-3">
+                  <img
+                    src={imagePreview}
+                    alt="Image Preview"
+                    className="max-h-32 object-contain border rounded-md"
+                  />
+                </div>
+              )}
+              {/* 이미지 삭제 스위치 */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="removeImage" className="text-right">
+                  이미지 삭제
+                </Label>
+                <div className="col-span-3 flex items-center gap-2">
+                  <Switch
+                    id="removeImage"
+                    name="removeImage"
+                    checked={isRemoveImage}
+                    onCheckedChange={handleRemoveImageToggle}
+                  />
+                  {isRemoveImage ? (
+                    <span className="text-sm text-red-500">
+                      이미지가 삭제됩니다.
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-500">
+                      새 이미지 업로드 또는 삭제
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -480,7 +818,7 @@ export default function ProductsPage({ loaderData }: Route.ComponentProps) {
               </Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Form method="post">
+              <Form method="post" onSubmit={handleFormSubmit}>
                 {/* 삭제(Delete)임을 알리는 hidden input */}
                 <input type="hidden" name="actionType" value="D" />
                 {/* 삭제할 상품의 ID를 전달하는 hidden input */}

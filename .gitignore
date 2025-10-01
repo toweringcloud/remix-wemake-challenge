@@ -11,3 +11,6 @@
 /app/models/*_real*
 bun.log
 fly.log
+supabase.log
+vercel.log
+wrangler.log

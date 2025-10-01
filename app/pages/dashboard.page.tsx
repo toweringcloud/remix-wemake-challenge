@@ -3,6 +3,7 @@ import { BookMarked, Archive, CookingPot, ShoppingCart } from "lucide-react";
 import type { Route } from "./+types/dashboard.page";
 import { FeatureCard } from "~/components/feature-card";
 import { useRoleStore } from "~/stores/user.store";
+import { useCafeStore } from "~/stores/cafe.store";
 
 // ✅ loader 데이터를 활용하여 meta의 title 변경
 // export const meta: Route.MetaFunction = ({ matches }: Route.MetaArgs) => {
@@ -31,11 +32,12 @@ export const meta: Route.MetaFunction = () => {
 
 export default function DashboardPage() {
   const { roleCode } = useRoleStore();
+  const { name } = useCafeStore();
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-6">
       <h1 className="text-4xl font-bold text-amber-800 mb-4">
-        {roleCode === "BA" ? "시니어클럽 카페" : "시니어클럽 카페 관리"}
+        {`${name}에 오신 걸 환영합니다!`}
       </h1>
       <p className="text-lg text-stone-600 mb-10">
         조회 또는 관리할 기능을 선택해주세요.

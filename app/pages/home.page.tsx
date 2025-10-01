@@ -106,9 +106,9 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
           onClick={handleStart}
           className="mt-8 inline-flex items-center justify-center bg-amber-600 text-white font-bold text-3xl py-3 px-8 rounded-lg hover:bg-amber-700 transition-transform hover:scale-105"
         >
-          <PulsatingButton>
-            {loaderData?.name || "대시보드로 이동"}
-          </PulsatingButton>
+          {/* <PulsatingButton> */}
+          {loaderData?.name || "대시보드로 이동"}
+          {/* </PulsatingButton> */}
         </button>
       </div>
     </div>

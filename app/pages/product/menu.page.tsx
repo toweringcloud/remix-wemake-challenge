@@ -7,6 +7,7 @@ import {
   type LoaderFunctionArgs,
 } from "react-router-dom";
 
+import { DialogDescription } from "@radix-ui/react-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -27,15 +29,13 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 
 import type { Route } from "./+types/menu.page";
 import { MenuCard } from "~/components/menu-card";
 import { useRoleStore } from "~/stores/user.store";
 import { getCookieSession } from "~/utils/cookie.server";
 import { createClient } from "~/utils/supabase.server";
-import { DialogDescription } from "@radix-ui/react-dialog";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { Checkbox } from "~/components/ui/checkbox";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Menus | Caferium" },
@@ -282,9 +282,7 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="picture" className="text-right">
-                  AI 옵션
-                </Label>
+                <Label className="text-right">AI 옵션</Label>
                 <div className="col-start-2 col-span-3 flex items-center space-x-2">
                   <Checkbox id="generate-recipe" name="generateRecipe" />
                   <Label
@@ -398,9 +396,7 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="picture" className="text-right">
-                  AI 옵션
-                </Label>
+                <Label className="text-right">AI 옵션</Label>
                 <div className="col-start-2 col-span-3 flex items-center space-x-2">
                   <Checkbox id="generate-recipe" name="generateRecipe" />
                   <Label
