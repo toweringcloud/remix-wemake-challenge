@@ -1,5 +1,6 @@
 import React from "react";
-import { cn } from "~/utils/tailwindcss.util";
+
+import { cn } from "~/lib/utils";
 
 interface PulsatingButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {

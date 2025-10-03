@@ -68,8 +68,34 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%; /* ✅ Primary 색상 추가 */
+    --primary-foreground: 210 40% 98%; /* ✅ Primary Foreground 색상 추가 */
+
+    --secondary: 210 40% 96.1%; /* ✅ Secondary 색상 추가 */
+    --secondary-foreground: 222.2 47.4% 11.2%; /* ✅ Secondary Foreground 색상 추가 */
+
+    --muted: 210 40% 96.1%; /* ✅ Muted 색상 추가 */
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%; /* ✅ Accent 색상 추가 */
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%; /* ✅ Destructive 색상 추가 */
+    --destructive-foreground: 210 40% 98%;
+
     --border: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%; /* ✅ ring 변수 값 정의 */
+    --input: 214.3 31.8% 91.4%; /* ✅ Input 색상 추가 */
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem; /* ✅ border-radius 변수도 필요할 수 있습니다. */
+
     --magic-border: 255 255 255;
     --magic-color: 0 0 0;
   }
@@ -77,28 +103,54 @@
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%; /* ✅ Primary 색상 (dark) */
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%; /* ✅ Secondary 색상 (dark) */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%; /* ✅ Muted 색상 (dark) */
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%; /* ✅ Accent 색상 (dark) */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%; /* ✅ Destructive 색상 (dark) */
+    --destructive-foreground: 210 40% 98%;
+
     --border: 217.2 32.6% 17.5%;
-    --ring: 217.2 32.6% 17.5%; /* ✅ ring 변수 값 정의 (dark) */
+    --input: 217.2 32.6% 17.5%; /* ✅ Input 색상 (dark) */
+    --ring: 212.7 26.8% 83.9%;
+
+    --magic-border: 0 0 0;
+    --magic-color: 255 255 255;
   }
 
-  /* ✅ 오류가 발생한 부분 수정
-    v3의 @apply border-border; 대신, v4에서는 theme() 함수를 사용합니다.
-  */
+  /* ✅ Switch 컴포넌트의 배경색 강제 적용 */
+  button[role="switch"] {
+    background-color: hsl(var(--input)) !important;
+  }
+
+  button[role="switch"][data-state="checked"] {
+    background-color: hsl(var(--primary)) !important;
+  }
+
+  button[role="switch"] span {
+    /* Switch Thumb */
+    background-color: hsl(var(--background)) !important;
+  }
+
+  /* ... (기존 * 및 body 스타일) ... */
   * {
-    border-color: theme(--color-border);
-  }
-
-  body {
-    background-color: theme(--color-background);
-    color: theme(--color-foreground);
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
+    /* border-color: theme(--color-border); */
+    /* outline-ring/50 대신 직접 CSS 변수를 사용하는 것이 안전합니다. */
+    outline-color: hsl(var(--ring) / 0.5);
   }
 }

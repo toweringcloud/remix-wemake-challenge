@@ -412,7 +412,7 @@ export default function ProductsPage() {
   // 파일 입력 Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ 폼 제출이 완료되었는지 확인
+  // 폼 제출이 완료되었는지 확인
   const isSubmitting = navigation.state === "submitting";
 
   // 상품 등록
@@ -467,11 +467,11 @@ export default function ProductsPage() {
     setIsAlertOpen(true);
   };
 
-  // ✅ 삭제 확인 버튼 클릭 시 폼을 수동으로 제출하는 핸들러
+  // 삭제 확인 버튼 클릭 시 폼을 수동으로 제출하는 핸들러
   const handleConfirmDelete = () => {
     if (deleteFormRef.current) {
       console.log("Attempting to manually submit delete form.");
-      deleteFormRef.current.submit(); // ✅ Form을 명시적으로 제출
+      deleteFormRef.current.submit();
     }
   };
 
@@ -683,13 +683,9 @@ export default function ProductsPage() {
                       />
                     </div>
                   )}
-                  {/* 등록 팝업에서는 이미지 삭제 스위치가 필요 없을 수 있습니다.
-                      만약 필요하다면, 수정 팝업의 이미지 삭제 스위치 코드를 여기에 추가하세요.
-                  */}
                 </div>
               </div>
             </div>
-
             <DialogFooter>
               <Button
                 type="button"
@@ -806,27 +802,28 @@ export default function ProductsPage() {
                     )}
                   </div>
                   {/* ✅ 이미지 삭제 스위치 */}
-                  <div className="flex items-center gap-2 pt-2">
-                    {/* `pt-2` 추가하여 위 이미지와 간격 유지 */}
-                    <Switch
-                      id="removeImage"
-                      name="removeImage"
-                      checked={isRemoveImage}
-                      onCheckedChange={handleRemoveImageToggle}
-                    />
-                    <Label
-                      htmlFor="removeImage"
-                      className="cursor-pointer text-sm font-normal"
-                    >
-                      {/* Label로 감싸서 클릭 영역 넓히기 */}
-                      {isRemoveImage ? (
-                        <span className="text-red-500">이미지 삭제</span>
-                      ) : (
-                        <span className="text-gray-500">
-                          이미지 유지 / 새 이미지 업로드
-                        </span>
-                      )}
-                    </Label>
+                  <div className="flex items-center justify-between gap-2 pt-2">
+                    <div className="flex items-center gap-2">
+                      {/* ✅ Switch와 Label 텍스트를 함께 묶기 */}
+                      <Switch
+                        id="removeImage"
+                        name="removeImage"
+                        checked={isRemoveImage}
+                        onCheckedChange={handleRemoveImageToggle}
+                      />
+                      <Label
+                        htmlFor="removeImage"
+                        className="cursor-pointer text-sm font-normal"
+                      >
+                        {isRemoveImage ? (
+                          <span className="text-red-500">이미지 삭제</span>
+                        ) : (
+                          <span className="text-gray-500">
+                            이미지 유지 / 새 이미지 업로드
+                          </span>
+                        )}
+                      </Label>
+                    </div>
                   </div>
                 </div>
               </div>
