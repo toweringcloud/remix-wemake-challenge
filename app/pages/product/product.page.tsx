@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -11,7 +10,9 @@ import {
   type ActionFunction,
   type LoaderFunction,
 } from "react-router";
+import { toast } from "sonner";
 import { z } from "zod";
+import { v4 as uuidv4 } from "uuid";
 
 import {
   AlertDialog,
@@ -34,7 +35,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Switch } from "@radix-ui/react-switch";
+import { Switch } from "~/components/ui/switch";
 
 import type { Route } from "./+types/product.page";
 import { ProductCard } from "~/components/product-card";
@@ -85,10 +86,17 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
 };
 
 // ✅ zod를 사용하여 유효성 검사 스키마를 정의합니다.
-const productSchema = z.object({
+const productSchemaForInsert = z.object({
   name: z.string().min(1, { message: "상품 이름은 필수입니다." }),
   description: z.string().optional(),
-  id: z.string().optional(),
+});
+const productSchemaForUpdate = z.object({
+  id: z.string().min(1, { message: "ID is required for update" }),
+  name: z.string().min(1, { message: "상품 이름은 필수입니다." }),
+  description: z.string().optional(),
+});
+const productSchemaForDelete = z.object({
+  id: z.string().min(1, { message: "ID is required for delete" }),
 });
 
 export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
@@ -101,7 +109,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
     const formData = await request.formData();
     const actionType = formData.get("actionType");
 
-    if (!actionType) {
+    if (!actionType || !["C", "U", "D"].includes(actionType.toString())) {
       return new Response(
         JSON.stringify({ ok: false, error: "Invalid action type" }),
         {
@@ -111,23 +119,25 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       );
     }
 
-    // ✅ formData 유효성 검사 실패 시, 에러 메시지를 클라이언트로 반환합니다.
-    const submission = productSchema.safeParse(Object.fromEntries(formData));
-    if (!submission.success) {
-      return new Response(
-        JSON.stringify({ errors: submission.error.flatten().fieldErrors }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const { name, description, id } = submission.data;
     const { supabase } = createClient(request);
 
     // --- C: 생성 (Create) ---
     if (actionType === "C") {
+      // ✅ formData 유효성 검사 실패 시, 에러 메시지를 클라이언트로 반환합니다.
+      const submission = productSchemaForInsert.safeParse(
+        Object.fromEntries(formData)
+      );
+      if (!submission.success) {
+        return new Response(
+          JSON.stringify({ errors: submission.error.flatten().fieldErrors }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      const { name, description } = submission.data;
+
       let imageUrl: string | null = null;
       const imageFile = formData.get("image") as File;
 
@@ -159,7 +169,6 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         .insert({ name, description, image_url: imageUrl, cafe_id: cafeId });
 
       if (error) {
-        // Supabase 에러 발생 시 Response 객체로 반환
         return new Response(
           JSON.stringify({ ok: false, error: error.message }),
           {
@@ -177,15 +186,19 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 
     // --- U: 수정 (Update) ---
     if (actionType === "U") {
-      if (!id) {
+      const submission = productSchemaForUpdate.safeParse(
+        Object.fromEntries(formData)
+      );
+      if (!submission.success) {
         return new Response(
-          JSON.stringify({ ok: false, error: "ID is required for update" }),
+          JSON.stringify({ errors: submission.error.flatten().fieldErrors }),
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
           }
         );
       }
+      const { id: productId, name, description } = submission.data;
 
       const updateData: {
         name?: string;
@@ -199,7 +212,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       const { data: existingProduct, error: fetchError } = await supabase
         .from("products")
         .select("image_url")
-        .eq("id", id)
+        .eq("id", productId)
         .single();
 
       if (fetchError || !existingProduct) {
@@ -266,7 +279,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       const { error } = await supabase
         .from("products")
         .update(updateData)
-        .eq("id", id)
+        .eq("id", productId)
         .eq("cafe_id", cafeId);
 
       if (error) {
@@ -278,7 +291,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
           }
         );
       }
-      console.log(`products.U: cafe(${cafeId}), product(${id})`);
+      console.log(`products.U: cafe(${cafeId}), product(${productId})`);
       return new Response(JSON.stringify({ ok: true, action: actionType }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -287,20 +300,24 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 
     // --- D: 삭제 (Delete) ---
     if (actionType === "D") {
-      if (!id) {
+      const submission = productSchemaForDelete.safeParse(
+        Object.fromEntries(formData)
+      );
+      if (!submission.success) {
         return new Response(
-          JSON.stringify({ ok: false, error: "ID is required for deletion" }),
+          JSON.stringify({ errors: submission.error.flatten().fieldErrors }),
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
           }
         );
       }
+      const { id: productId } = submission.data;
 
       const { data: productToDelete, error: selectError } = await supabase
         .from("products")
         .select("image_url, menus(id)") // 연결된 메뉴가 있는지 확인
-        .eq("id", id)
+        .eq("id", productId)
         .single();
 
       if (selectError || !productToDelete) {
@@ -335,7 +352,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       const { error } = await supabase
         .from("products")
         .delete()
-        .eq("id", id)
+        .eq("id", productId)
         .eq("cafe_id", cafeId);
 
       if (error) {
@@ -347,7 +364,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
           }
         );
       }
-      console.log(`products.D: cafe(${cafeId}), product(${id})`);
+      console.log(`products.D: cafe(${cafeId}), product(${productId})`);
       return new Response(JSON.stringify({ ok: true, action: actionType }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -369,19 +386,18 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
   }
 };
 
-// export default function ProductsPage({ loaderData }: Route.ComponentProps) {
 export default function ProductsPage() {
-  // 상품 목록 조회
-  // const [products] = useState<Product[]>(loaderData || []);
-  const products = useLoaderData() as Product[];
-  console.log("products.loaderData", products);
-
-  const { roleCode } = useRoleStore();
+  const { roleCode, isLoading } = useRoleStore();
   const navigate = useNavigate();
   const navigation = useNavigation(); // ✅ 폼 제출 상태를 추적
 
-  // ✅ useActionData 훅으로 action의 반환값을 가져옵니다.
+  // 상품 목록 조회
+  const products = useLoaderData() as Product[];
+  // console.log("products.loaderData", products);
+
+  // 상품 등록/수정/삭제 결과 조회
   const actionData = useActionData() as {
+    action?: "C" | "U" | "D";
     ok?: boolean;
     errors?: { name?: string[]; description?: string[]; image?: string[] };
     error?: string;
@@ -392,48 +408,12 @@ export default function ProductsPage() {
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isRemoveImage, setIsRemoveImage] = useState(false);
-  const [productName, setProductName] = useState("");
-  const [productDescription, setProductDescription] = useState("");
 
   // 파일 입력 Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ✅ 폼 제출이 완료되었는지 확인
   const isSubmitting = navigation.state === "submitting";
-
-  // ✅ actionData나 isSubmitting 상태가 변경될 때마다 실행
-  useEffect(() => {
-    // 액션 데이터 로깅 추가: action 함수에서 에러 메시지를 반환하면 여기에 찍힙니다.
-    if (actionData) {
-      console.log("Action Data received:", actionData);
-      if (actionData.ok === false) {
-        alert(actionData.error || actionData.errors?.image?.[0] || "작업 실패");
-      }
-    }
-
-    // 폼 제출이 끝났고(idle), 작업이 성공적으로 완료되었다면
-    if (!isSubmitting && actionData?.ok) {
-      // 모든 다이얼로그를 닫습니다.
-      setIsNewDialogOpen(false);
-      setIsEditDialogOpen(false);
-      setIsAlertOpen(false);
-      setImagePreview(null);
-      setIsRemoveImage(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      // 성공적으로 작업 완료 후, 페이지를 다시 로드하여 최신 데이터 반영
-      navigate(".", { replace: true });
-    }
-  }, [actionData, isSubmitting, navigate]);
-
-  // 접근 권한 확인
-  useEffect(() => {
-    if (roleCode !== "SA" && roleCode !== "MA") {
-      alert("접근 권한이 없습니다.");
-      navigate("/dashboard");
-    }
-  }, [roleCode, navigate]);
 
   // 상품 등록
   const handleNewClick = () => {
@@ -476,6 +456,25 @@ export default function ProductsPage() {
     }
   };
 
+  // 삭제 폼의 Ref를 생성합니다.
+  const deleteFormRef = useRef<HTMLFormElement>(null);
+
+  // 상품 삭제
+  const [oneToDelete, setOneToDelete] = useState<Product | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const handleDeleteClick = (menu: Product) => {
+    setOneToDelete(menu);
+    setIsAlertOpen(true);
+  };
+
+  // ✅ 삭제 확인 버튼 클릭 시 폼을 수동으로 제출하는 핸들러
+  const handleConfirmDelete = () => {
+    if (deleteFormRef.current) {
+      console.log("Attempting to manually submit delete form.");
+      deleteFormRef.current.submit(); // ✅ Form을 명시적으로 제출
+    }
+  };
+
   // 폼 제출 핸들러 (디버깅용)
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     console.log("Form submission started!");
@@ -495,13 +494,60 @@ export default function ProductsPage() {
     }
   };
 
-  // 상품 삭제
-  const [oneToDelete, setOneToDelete] = useState<Product | null>(null);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const handleDeleteClick = (menu: Product) => {
-    setOneToDelete(menu);
-    setIsAlertOpen(true);
-  };
+  // ✅ actionData나 isSubmitting 상태가 변경될 때마다 실행
+  useEffect(() => {
+    if (actionData) {
+      if (actionData.ok === false) {
+        // ✅ 실패 메시지 표시
+        toast.error("상품 관리", {
+          description:
+            actionData.error ||
+            actionData.errors?.image?.[0] ||
+            `상품 처리(${actionData.action}) 중 오류가 발생했습니다.`,
+        });
+      } else if (actionData.ok === true) {
+        let successMessage = "상품이 성공적으로 처리되었습니다.";
+        if (actionData.action === "C")
+          successMessage = "상품이 성공적으로 등록되었습니다.";
+        if (actionData.action === "U")
+          successMessage = "상품이 성공적으로 수정되었습니다.";
+        if (actionData.action === "D")
+          successMessage = "상품이 성공적으로 삭제되었습니다.";
+
+        // ✅ 성공 메시지 표시
+        toast.success("상품 관리", {
+          description: successMessage,
+        });
+      }
+    }
+
+    // 폼 제출이 끝났고(idle), 작업이 성공적으로 완료되었다면
+    if (!isSubmitting && actionData?.ok) {
+      // 모든 다이얼로그를 닫습니다.
+      setIsNewDialogOpen(false);
+      setIsEditDialogOpen(false);
+      setIsAlertOpen(false);
+      setImagePreview(null);
+      setIsRemoveImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      // 성공적으로 작업 완료 후, 페이지를 다시 로드하여 최신 데이터 반영
+      navigate(".", { replace: true });
+    }
+  }, [actionData, isSubmitting, navigate]);
+
+  // 페이지 접근 권한 확인
+  useEffect(() => {
+    // roleCode가 로딩 중이거나 (아직 확정되지 않았거나) null이면 아무것도 하지 않습니다.
+    if (isLoading || roleCode === null) {
+      return;
+    }
+    if (roleCode !== "SA" && roleCode !== "MA") {
+      toast.error("접근 권한이 없습니다.");
+      navigate("/dashboard");
+    }
+  }, [roleCode, isLoading, navigate]);
 
   return (
     <div className="p-6">
@@ -563,10 +609,9 @@ export default function ProductsPage() {
           <Form
             method="post"
             encType="multipart/form-data"
-            onSubmit={handleFormSubmit}
+            onSubmit={handleFormSubmit} // 디버깅용 코드 유지
           >
             <div className="grid gap-4 py-4">
-              {/* 등록(Create)임을 알리는 hidden input */}
               <input type="hidden" name="actionType" value="C" />
 
               <div className="grid grid-cols-4 items-center gap-4">
@@ -607,34 +652,42 @@ export default function ProductsPage() {
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="image" className="text-right">
+              <div className="grid grid-cols-4 items-start gap-4">
+                {/* `items-center` 대신 `items-start` */}
+                <Label htmlFor="image" className="text-right pt-2">
                   이미지
                 </Label>
-                <Input
-                  id="image"
-                  name="image"
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="col-span-3"
-                />
-                {actionData?.errors?.image && (
-                  <p className="col-start-2 col-span-3 text-sm text-red-500">
-                    {actionData.errors.image[0]}
-                  </p>
-                )}
-              </div>
-              {/* 이미지 미리보기 */}
-              {imagePreview && (
-                <div className="col-start-2 col-span-3">
-                  <img
-                    src={imagePreview}
-                    alt="Image Preview"
-                    className="max-h-32 object-contain border rounded-md"
+                {/* `pt-2` 추가하여 레이블 정렬 */}
+                <div className="col-span-3 space-y-2">
+                  {/* 이미지 관련 컨트롤들을 묶는 div */}
+                  <Input
+                    id="image"
+                    name="image"
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="w-full"
                   />
+                  {actionData?.errors?.image && (
+                    <p className="text-sm text-red-500">
+                      {actionData.errors.image[0]}
+                    </p>
+                  )}
+                  {imagePreview && (
+                    <div className="w-full h-32 overflow-hidden flex items-center justify-center border rounded-md bg-gray-50">
+                      {/* ✅ 고정된 높이와 중앙 정렬 */}
+                      <img
+                        src={imagePreview}
+                        alt="Image Preview"
+                        className="max-h-full max-w-full object-contain" /* ✅ 이미지 크기 조정 */
+                      />
+                    </div>
+                  )}
+                  {/* 등록 팝업에서는 이미지 삭제 스위치가 필요 없을 수 있습니다.
+                      만약 필요하다면, 수정 팝업의 이미지 삭제 스위치 코드를 여기에 추가하세요.
+                  */}
                 </div>
-              )}
+              </div>
             </div>
 
             <DialogFooter>
@@ -673,12 +726,10 @@ export default function ProductsPage() {
           <Form
             method="post"
             encType="multipart/form-data"
-            onSubmit={handleFormSubmit}
+            onSubmit={handleFormSubmit} // 디버깅용 코드 유지
           >
             <div className="grid gap-4 py-4">
-              {/* 수정(Update)임을 알리는 hidden input */}
               <input type="hidden" name="actionType" value="U" />
-              {/* 수정할 상품의 ID를 전달하는 hidden input */}
               <input type="hidden" name="id" value={selectedProduct?.id} />
 
               <div className="grid grid-cols-4 items-center gap-4">
@@ -719,56 +770,64 @@ export default function ProductsPage() {
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="image" className="text-right">
+              <div className="grid grid-cols-4 items-start gap-4">
+                {/* `items-center` 대신 `items-start` */}
+                <Label htmlFor="image" className="text-right pt-2">
                   이미지
                 </Label>
-                <Input
-                  id="image"
-                  name="image"
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  disabled={isRemoveImage} // 이미지 삭제 선택 시 비활성화
-                  className="col-span-3"
-                />
-                {actionData?.errors?.image && (
-                  <p className="col-start-2 col-span-3 text-sm text-red-500">
-                    {actionData.errors.image[0]}
-                  </p>
-                )}
-              </div>
-              {/* 이미지 미리보기 */}
-              {imagePreview && (
-                <div className="col-start-2 col-span-3">
-                  <img
-                    src={imagePreview}
-                    alt="Image Preview"
-                    className="max-h-32 object-contain border rounded-md"
+                {/* `pt-2` 추가하여 레이블 정렬 */}
+                <div className="col-span-3 space-y-2">
+                  {/* 이미지 관련 컨트롤들을 묶는 div */}
+                  <Input
+                    id="image"
+                    name="image"
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    disabled={isRemoveImage}
+                    className="w-full"
                   />
-                </div>
-              )}
-              {/* 이미지 삭제 스위치 */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="removeImage" className="text-right">
-                  이미지 삭제
-                </Label>
-                <div className="col-span-3 flex items-center gap-2">
-                  <Switch
-                    id="removeImage"
-                    name="removeImage"
-                    checked={isRemoveImage}
-                    onCheckedChange={handleRemoveImageToggle}
-                  />
-                  {isRemoveImage ? (
-                    <span className="text-sm text-red-500">
-                      이미지가 삭제됩니다.
-                    </span>
-                  ) : (
-                    <span className="text-sm text-gray-500">
-                      새 이미지 업로드 또는 삭제
-                    </span>
+                  {actionData?.errors?.image && (
+                    <p className="text-sm text-red-500">
+                      {actionData.errors.image[0]}
+                    </p>
                   )}
+                  {/* ✅ 이미지 미리보기 영역 */}
+                  <div className="w-full h-32 overflow-hidden flex items-center justify-center border rounded-md bg-gray-50">
+                    {/* ✅ 고정된 높이와 중앙 정렬 */}
+                    {imagePreview ? (
+                      <img
+                        src={imagePreview}
+                        alt="Image Preview"
+                        className="max-h-full max-w-full object-contain" /* ✅ 이미지 크기 조정 */
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">이미지 없음</span>
+                    )}
+                  </div>
+                  {/* ✅ 이미지 삭제 스위치 */}
+                  <div className="flex items-center gap-2 pt-2">
+                    {/* `pt-2` 추가하여 위 이미지와 간격 유지 */}
+                    <Switch
+                      id="removeImage"
+                      name="removeImage"
+                      checked={isRemoveImage}
+                      onCheckedChange={handleRemoveImageToggle}
+                    />
+                    <Label
+                      htmlFor="removeImage"
+                      className="cursor-pointer text-sm font-normal"
+                    >
+                      {/* Label로 감싸서 클릭 영역 넓히기 */}
+                      {isRemoveImage ? (
+                        <span className="text-red-500">이미지 삭제</span>
+                      ) : (
+                        <span className="text-gray-500">
+                          이미지 유지 / 새 이미지 업로드
+                        </span>
+                      )}
+                    </Label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -817,15 +876,18 @@ export default function ProductsPage() {
                 취소
               </Button>
             </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Form method="post" onSubmit={handleFormSubmit}>
-                {/* 삭제(Delete)임을 알리는 hidden input */}
-                <input type="hidden" name="actionType" value="D" />
-                {/* 삭제할 상품의 ID를 전달하는 hidden input */}
-                <input type="hidden" name="id" value={oneToDelete?.id} />
+            <Form
+              ref={deleteFormRef}
+              method="post"
+              onSubmit={handleFormSubmit} // 디버깅용 코드 유지
+              style={{ display: "contents" }} // Flexbox/Grid 레이아웃에 영향을 주지 않도록
+            >
+              <input type="hidden" name="actionType" value="D" />
+              <input type="hidden" name="id" value={oneToDelete?.id} />
 
+              <AlertDialogAction asChild>
                 <Button
-                  type="submit"
+                  onClick={handleConfirmDelete}
                   variant="destructive"
                   className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
                   disabled={isSubmitting}
@@ -833,8 +895,8 @@ export default function ProductsPage() {
                   <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
                   {isSubmitting ? "처리 중..." : "삭제 확인"}
                 </Button>
-              </Form>
-            </AlertDialogAction>
+              </AlertDialogAction>
+            </Form>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

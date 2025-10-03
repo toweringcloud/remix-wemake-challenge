@@ -7,6 +7,7 @@ interface RoleState {
   cafeId: string | null;
   roleCode: UserRole | null;
   isLoggedIn: boolean;
+  isLoading: boolean;
 
   login: (cafeId: string, roleCode: UserRole) => void;
   logout: () => void;
@@ -16,12 +17,15 @@ export const useRoleStore = create<RoleState>((set) => ({
   cafeId: null,
   roleCode: null,
   isLoggedIn: false,
+  isLoading: true,
 
-  login: (cafeId, roleCode) => set({ cafeId, roleCode, isLoggedIn: true }),
+  login: (cafeId, roleCode) =>
+    set({ cafeId, roleCode, isLoggedIn: true, isLoading: false }),
   logout: () =>
     set({
       cafeId: null,
       roleCode: null,
       isLoggedIn: false,
+      isLoading: true,
     }),
 }));

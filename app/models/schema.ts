@@ -138,13 +138,21 @@ export const products = pgTable(
 );
 
 // ✨ Menu (메뉴)
+export const menuStatusEnum = pgEnum("menu_status", [
+  "BEFORE_OPEN", // 오픈 전
+  "ON_SALE", // 판매 중
+  "SOLD_OUT", // 매진 (당일 재료 소진)
+  "OUT_OF_STOCK", // 품절 (당분간 재고 없음)
+  "HOLD", // 일시 중지 (계절성 메뉴 등의 기타 사유)
+]);
 export const menus = pgTable("menus", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 64 }).notNull(),
-  isHot: boolean("is_hot").notNull().default(true), // 핫/아이스 여부
+  isHot: boolean("is_hot"), // Hot or Ice 여부
   price: integer("price").notNull().default(0), // 가격
   stock: integer("stock").notNull().default(0), // 재고 수량
-  isActive: boolean("is_active").default(true), // 판매 여부
+  status: menuStatusEnum("status").notNull().default("BEFORE_OPEN"),
+  isActive: boolean("is_active").notNull().default(false), // 판매 가능 여부
   image: text("image_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -212,6 +220,8 @@ export const stocks = pgTable(
     name: varchar("name", { length: 64 }).notNull(),
     description: text("description"),
     image: text("image_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     cafeId: uuid("cafe_id")
       .notNull()
       .references(() => cafes.id),

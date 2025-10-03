@@ -6,7 +6,7 @@
 /build/
 
 # Additional
-.env
+.env*
 /app/models/migrations/*
 /app/models/*_real*
 bun.log

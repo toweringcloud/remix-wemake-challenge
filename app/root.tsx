@@ -11,9 +11,9 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { cn } from "./utils/tailwindcss.util";
-import { createClient } from "./utils/supabase.server";
+import { Toaster } from "~/components/ui/sonner";
 import { useRoleStore } from "./stores/user.store";
+import { createClient } from "./utils/supabase.server";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -41,6 +41,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
+        <Toaster richColors />
       </body>
     </html>
   );
@@ -60,21 +61,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const isLoading = navigation.state === "loading";
 
   const { login } = useRoleStore();
-  const isLoggedIn = loaderData.user !== null;
-  if (isLoggedIn) login("staff");
-
+  console.log("App.pathname", pathname);
+  console.log("App.navigation.state", navigation.state);
+  console.log("App.isLoading", isLoading);
+  console.log("App.user", loaderData.user);
   return <Outlet />;
-  // return (
-  //   <div
-  //     className={cn({
-  //       "py-28 px-5 md:px-20": !pathname.includes("/auth/"),
-  //       "transition-opacity animate-pulse": isLoading,
-  //     })}
-  //   >
-  //     {pathname.includes("/auth") ? null : <></>}
-  //     <Outlet />
-  //   </div>
-  // );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
