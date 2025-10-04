@@ -7,7 +7,6 @@ import {
   type LoaderFunctionArgs,
 } from "react-router-dom";
 
-import { DialogDescription } from "@radix-ui/react-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -50,8 +50,7 @@ interface Menu {
   description?: string;
   isHot?: boolean;
   price: number;
-  stock: number;
-  isActive: boolean;
+  status: string;
   imageUrl?: string;
   [key: string]: any;
 }
@@ -73,7 +72,7 @@ export const loader: LoaderFunction = async ({
   const { supabase } = createClient(request);
   const { data } = await supabase
     .from("menus")
-    .select("*, products(name), recipes(description)")
+    .select("*, products(name)")
     .eq("cafe_id", cafeId)
     .eq("product_id", productId);
 
@@ -82,12 +81,11 @@ export const loader: LoaderFunction = async ({
       id: item.id,
       category: item.products.name,
       name: item.name,
-      description: item.recipes.description,
+      description: item.description,
       isHot: item.is_hot,
       price: item.price,
-      stock: item.stock,
-      isActive: item.is_active,
-      imageUrl: item.image_url,
+      status: item.status,
+      imageUrl: item.image_thumb_url,
       updatedAt: item.updated_at,
     }));
     console.log("menus.R", menus);
@@ -108,12 +106,6 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
   const [tempOption, setTempOption] = useState<"none" | "hot" | "ice">("none");
   const [shouldGenerateRecipe, setShouldGenerateRecipe] = useState(false);
 
-  const handleIsActiveChange = (checked: boolean) => {
-    if (selectedMenu) {
-      setSelectedMenu({ ...selectedMenu, isActive: checked });
-    }
-  };
-
   // 폼 입력 값 업데이트
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -123,9 +115,6 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
         [id]: value,
       });
     }
-  };
-  const handleSwitchChange = (id: "isHot" | "isActive", checked: boolean) => {
-    // ...
   };
 
   // 메뉴 등록
@@ -184,10 +173,10 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
             id={menu.id.toString()}
             name={menu.name}
             description={menu.description}
-            status={`[${menu.isActive ? "판매중" : "판매중지"}] 가격: ${menu.price} 원, 재고: ${menu.stock} EA`}
+            status={`[${menu.status === "ON_SALE" ? "판매중" : "판매전"}] 가격: ${menu.price} 원`}
             category={menu.category}
             isHot={menu.isHot}
-            imageUrl={menu.imageUrl}
+            imageUrl={menu.imageThumbUrl}
             action={
               roleCode === "MA" && (
                 // 매니저일 경우: 수정/삭제 버튼

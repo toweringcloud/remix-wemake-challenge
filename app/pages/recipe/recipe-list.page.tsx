@@ -59,6 +59,8 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
       `
       *,
       menus (
+        description,
+        image_url,
         products (
           name
         )
@@ -78,13 +80,13 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
     const recipes: Recipe[] = data.map((item: any) => ({
       id: item.menu_id,
       name: item.name,
-      description: item.description,
+      description: item.menus.description,
       ingredients: item.recipe_ingredients.map((i: any) => ({
         name: i.ingredients.name,
         quantity: i.quantity,
       })),
       productName: item.menus.products.name,
-      imageUrl: item.video,
+      imageUrl: item.menus.image_url,
       updatedAt: item.updated_at,
     }));
     console.log("recipes.R", recipes);

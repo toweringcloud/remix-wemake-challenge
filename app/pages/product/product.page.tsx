@@ -54,7 +54,6 @@ interface Product {
   name: string;
   description: string;
   imageUrl: string | null;
-  updatedAt: string;
   [key: string]: unknown;
 }
 
@@ -203,7 +202,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       const updateData: {
         name?: string;
         description?: string;
-        image_url?: string | null; // null 허용
+        image_url?: string | null;
       } = { name, description };
       const imageFile = formData.get("image") as File;
       const removeImage = formData.get("removeImage") === "true"; // 이미지 삭제 스위치 값
@@ -235,7 +234,6 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 
         // 새 이미지 업로드
         const filePath = `${cafeId}/product/${uuidv4()}-${imageFile.name}`;
-        // const filePath = `${cafeId}/product/${randomUUID()}-${imageFile.name}`;
         const { error: uploadError } = await supabase.storage
           .from("images")
           .upload(filePath, imageFile);
@@ -259,7 +257,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         // 이미지 삭제 요청 처리
         const oldFilePath = existingProduct.image_url.split("/images/")[1];
         await supabase.storage.from("images").remove([oldFilePath]);
-        updateData.image_url = null; // DB에서도 이미지 URL 제거
+        updateData.image_url = null;
       } else if (
         imageFile.size === 0 &&
         !removeImage &&

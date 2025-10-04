@@ -46,9 +46,9 @@ export const users = pgTable(
   },
   (table) => {
     // 현재 로그인한 사용자의 cafe_id를 가져오는 헬퍼 SQL
-    const currentUserCafeId = sql`(SELECT cafe_id FROM public.users WHERE id = auth.uid())`;
+    // const currentUserCafeId = sql`(SELECT cafe_id FROM public.users WHERE id = auth.uid())`;
     // 현재 로그인한 사용자가 매니저인지 확인하는 헬퍼 SQL
-    const isManager = sql`(SELECT role FROM public.users WHERE id = auth.uid()) = 'MA'`;
+    // const isManager = sql`(SELECT role FROM public.users WHERE id = auth.uid()) = 'MA'`;
 
     return [
       {
@@ -57,37 +57,37 @@ export const users = pgTable(
           table.role
         ),
       },
-      {
-        // ✅ SELECT 정책: 로그인한 사용자는 자신이 속한 카페의 모든 사용자 정보를 볼 수 있습니다.
-        "select-policy": pgPolicy("users-select-policy", {
-          for: "select",
-          to: "authenticated", // 로그인한 모든 사용자
-          as: "permissive",
-          using: sql`${currentUserCafeId} = ${table.cafeId}`,
-        }),
-        // ✅ INSERT 정책: 매니저는 자신이 속한 카페에만 새로운 사용자를 추가할 수 있습니다.
-        "insert-policy": pgPolicy("users-insert-policy", {
-          for: "insert",
-          to: "authenticated",
-          as: "permissive",
-          withCheck: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
-        }),
-        // ✅ UPDATE 정책: 로그인한 사용자는 자신의 정보만 수정할 수 있습니다.
-        "update-policy": pgPolicy("users-update-policy", {
-          for: "update",
-          to: "authenticated",
-          as: "permissive",
-          using: sql`auth.uid() = ${table.id}`,
-          withCheck: sql`auth.uid() = ${table.id}`,
-        }),
-        // ✅ DELETE 정책: 매니저는 자신이 속한 카페의 사용자만 삭제할 수 있습니다.
-        "delete-policy": pgPolicy("users-delete-policy", {
-          for: "delete",
-          to: "authenticated",
-          as: "permissive",
-          using: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
-        }),
-      },
+      // {
+      //   // ✅ SELECT 정책: 로그인한 사용자는 자신이 속한 카페의 모든 사용자 정보를 볼 수 있습니다.
+      //   "select-policy": pgPolicy("users-select-policy", {
+      //     for: "select",
+      //     to: "authenticated", // 로그인한 모든 사용자
+      //     as: "permissive",
+      //     using: sql`${currentUserCafeId} = ${table.cafeId}`,
+      //   }),
+      //   // ✅ INSERT 정책: 매니저는 자신이 속한 카페에만 새로운 사용자를 추가할 수 있습니다.
+      //   "insert-policy": pgPolicy("users-insert-policy", {
+      //     for: "insert",
+      //     to: "authenticated",
+      //     as: "permissive",
+      //     withCheck: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
+      //   }),
+      //   // ✅ UPDATE 정책: 로그인한 사용자는 자신의 정보만 수정할 수 있습니다.
+      //   "update-policy": pgPolicy("users-update-policy", {
+      //     for: "update",
+      //     to: "authenticated",
+      //     as: "permissive",
+      //     using: sql`auth.uid() = ${table.id}`,
+      //     withCheck: sql`auth.uid() = ${table.id}`,
+      //   }),
+      //   // ✅ DELETE 정책: 매니저는 자신이 속한 카페의 사용자만 삭제할 수 있습니다.
+      //   "delete-policy": pgPolicy("users-delete-policy", {
+      //     for: "delete",
+      //     to: "authenticated",
+      //     as: "permissive",
+      //     using: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
+      //   }),
+      // },
     ];
   }
 );
@@ -100,15 +100,18 @@ export const products = pgTable(
     name: varchar("name", { length: 64 }).notNull(),
     description: text("description"),
     image: text("image_url"),
+    imageThumb: text("image_thumb_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     cafeId: uuid("cafe_id")
       .notNull()
       .references(() => cafes.id),
   },
   (table) => {
     // 현재 로그인한 사용자의 cafe_id를 가져오는 헬퍼 SQL
-    const currentUserCafeId = sql`(SELECT cafe_id FROM public.users WHERE id = auth.uid())`;
+    // const currentUserCafeId = sql`(SELECT cafe_id FROM public.users WHERE id = auth.uid())`;
     // 현재 로그인한 사용자가 매니저인지 확인하는 헬퍼 SQL
-    const isManager = sql`(SELECT role FROM public.users WHERE id = auth.uid()) = 'MA'`;
+    // const isManager = sql`(SELECT role FROM public.users WHERE id = auth.uid()) = 'MA'`;
 
     return [
       {
@@ -117,29 +120,29 @@ export const products = pgTable(
           table.name
         ),
       },
-      {
-        // ✅ SELECT 정책: 자신이 속한 카페의 상품만 조회할 수 있습니다.
-        "query-policy": pgPolicy("products-select-policy", {
-          for: "select",
-          to: "authenticated",
-          as: "permissive",
-          using: sql`${currentUserCafeId} = ${table.cafeId}`,
-        }),
-        // ✅ INSERT/UPDATE/DELETE 정책: 매니저만 자신이 속한 카페에 상품을 추가/수정/삭제할 수 있습니다.
-        "mutation-policy": pgPolicy("products-insert-update-delete-policy", {
-          for: "all",
-          to: "authenticated",
-          as: "permissive",
-          withCheck: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
-        }),
-      },
+      // {
+      //   // ✅ SELECT 정책: 자신이 속한 카페의 상품만 조회할 수 있습니다.
+      //   "query-policy": pgPolicy("products-select-policy", {
+      //     for: "select",
+      //     to: "authenticated",
+      //     as: "permissive",
+      //     using: sql`${currentUserCafeId} = ${table.cafeId}`,
+      //   }),
+      //   // ✅ INSERT/UPDATE/DELETE 정책: 매니저만 자신이 속한 카페에 상품을 추가/수정/삭제할 수 있습니다.
+      //   "mutation-policy": pgPolicy("products-insert-update-delete-policy", {
+      //     for: "all",
+      //     to: "authenticated",
+      //     as: "permissive",
+      //     withCheck: sql`${isManager} AND ${currentUserCafeId} = ${table.cafeId}`,
+      //   }),
+      // },
     ];
   }
 );
 
 // ✨ Menu (메뉴)
 export const menuStatusEnum = pgEnum("menu_status", [
-  "BEFORE_OPEN", // 오픈 전
+  "BEFORE_OPEN", // 출시 전
   "ON_SALE", // 판매 중
   "SOLD_OUT", // 매진 (당일 재료 소진)
   "OUT_OF_STOCK", // 품절 (당분간 재고 없음)
@@ -148,12 +151,12 @@ export const menuStatusEnum = pgEnum("menu_status", [
 export const menus = pgTable("menus", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 64 }).notNull(),
+  description: text("description"),
   isHot: boolean("is_hot"), // Hot or Ice 여부
   price: integer("price").notNull().default(0), // 가격
-  stock: integer("stock").notNull().default(0), // 재고 수량
   status: menuStatusEnum("status").notNull().default("BEFORE_OPEN"),
-  isActive: boolean("is_active").notNull().default(false), // 판매 가능 여부
   image: text("image_url"),
+  imageThumb: text("image_thumb_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   productId: bigint("product_id", { mode: "number" })
@@ -167,10 +170,10 @@ export const menus = pgTable("menus", {
 // 🍳 Recipe (레시피)
 export const recipes = pgTable("recipes", {
   name: varchar("name", { length: 64 }).notNull(),
-  description: text("description"),
   // ingredients: text("ingredients").array().notNull(), -> recipe_ingredients
   steps: text("steps").array().notNull(),
   video: text("video_url"),
+  videoThumb: text("video_thumb_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   menuId: bigint("menu_id", { mode: "number" })
@@ -186,6 +189,8 @@ export const ingredients = pgTable("ingredients", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 64 }).notNull(),
   image: text("image_url"),
+  imageThumb: text("image_thumb_url"),
+  itemId: bigint("item_id", { mode: "number" }).references(() => items.id),
   cafeId: uuid("cafe_id")
     .notNull()
     .references(() => cafes.id),
@@ -220,6 +225,7 @@ export const stocks = pgTable(
     name: varchar("name", { length: 64 }).notNull(),
     description: text("description"),
     image: text("image_url"),
+    imageThumb: text("image_thumb_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     cafeId: uuid("cafe_id")
@@ -242,9 +248,18 @@ export const stocks = pgTable(
 export const items = pgTable("items", {
   id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 64 }).notNull(), // 예: 에스프레소 원두, 아몬드 시럽 등
-  count: integer("count").notNull().default(0),
-  unit: varchar("unit", { length: 16 }), // 예: 개, 봉지, ml 등
+  description: text("description"), // 상세 설명
+  count: integer("count").notNull().default(0), // 재고 수량
+  unit: varchar("unit", { length: 16 }), // 단위 (예: 개, 봉지, ml 등)
+  origin: varchar("origin", { length: 64 }), // 원산지
+  brand: varchar("brand", { length: 64 }), // 브랜드
+  model: varchar("model", { length: 64 }), // 모델명
   image: text("image_url"),
+  imageThumb: text("image_thumb_url"),
+  purchasePlace: varchar("purchase_place", { length: 128 }), // 구매처
+  purchasePrice: integer("purchase_price").default(0), // 구매가
+  purchasedAt: timestamp("purchase_date", { withTimezone: true }), // 구매일
+  expiredAt: timestamp("expiry_date", { withTimezone: true }), // 유통기한
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   stockId: bigint("stock_id", { mode: "number" })
