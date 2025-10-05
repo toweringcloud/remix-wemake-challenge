@@ -88,7 +88,7 @@ export const loader: LoaderFunction = async ({
       imageUrl: item.image_thumb_url,
       updatedAt: item.updated_at,
     }));
-    console.log("menus.R", menus);
+    // console.log("menus.R", menus);
     return menus;
   } else return [];
 };
@@ -176,7 +176,7 @@ export default function MenusPage({ loaderData }: Route.ComponentProps) {
             status={`[${menu.status === "ON_SALE" ? "판매중" : "판매전"}] 가격: ${menu.price} 원`}
             category={menu.category}
             isHot={menu.isHot}
-            imageUrl={menu.imageThumbUrl}
+            imageUrl={menu.imageThumbUrl || null}
             action={
               roleCode === "MA" && (
                 // 매니저일 경우: 수정/삭제 버튼

@@ -52,9 +52,9 @@ export const meta: Route.MetaFunction = () => [
 interface Product {
   id: number;
   name: string;
-  description: string;
-  imageUrl: string | null;
-  [key: string]: unknown;
+  description?: string;
+  imageUrl?: string;
+  [key: string]: any;
 }
 
 export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
@@ -423,7 +423,7 @@ export default function ProductsPage() {
   // 상품 수정
   const handleEditClick = (product: Product) => {
     setSelectedProduct(product);
-    setImagePreview(product.imageUrl); // 기존 이미지 미리보기 설정
+    setImagePreview(product.imageUrl || null); // 기존 이미지 미리보기 설정
     setIsRemoveImage(false); // 수정 시 기본은 이미지 유지
     setIsEditDialogOpen(true);
   };
@@ -569,7 +569,7 @@ export default function ProductsPage() {
             id={product.id.toString()}
             name={product.name}
             description={product.description}
-            imageUrl={product.imageUrl || ""}
+            imageUrl={product.imageUrl}
             action={
               ["SA", "MA"].includes(roleCode!) && (
                 // 매니저일 경우: 수정/삭제 버튼

@@ -14,8 +14,8 @@ import {
 interface ProductCardProps {
   id: string;
   name: string;
-  description: string;
-  imageUrl: string;
+  description?: string;
+  imageUrl?: string;
   action?: React.ReactNode;
 }
 
