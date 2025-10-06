@@ -1,9 +1,8 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Autoplay from "embla-carousel-autoplay";
 // import { DateTime } from "luxon";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import type { Route } from "./+types/home.page";
 import { PulsatingButton } from "~/components/magicui/pulsating-button";
 import {
   Carousel,
@@ -12,8 +11,10 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "~/components/ui/carousel";
+
+import type { Route } from "./+types/home.page";
+import { createClient } from "~/lib/supabase.server";
 import { useRoleStore } from "~/stores/user.store";
-import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Home | Caferium" },

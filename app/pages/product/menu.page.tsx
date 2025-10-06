@@ -34,8 +34,8 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import type { Route } from "./+types/menu.page";
 import { MenuCard } from "~/components/menu-card";
 import { useRoleStore } from "~/stores/user.store";
-import { getCookieSession } from "~/utils/cookie.server";
-import { createClient } from "~/utils/supabase.server";
+import { getCookieSession } from "~/lib/cookie.server";
+import { createClient } from "~/lib/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Menus | Caferium" },

@@ -4,7 +4,7 @@ import { Outlet, useLoaderData } from "react-router-dom";
 import type { Route } from "./+types/root.layout";
 import Header from "~/components/layout/header";
 import { useRoleStore } from "~/stores/user.store";
-import { parseCookie } from "~/utils/cookie.server";
+import { parseCookie } from "~/lib/cookie.server";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   try {

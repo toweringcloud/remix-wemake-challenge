@@ -39,9 +39,10 @@ import { Switch } from "~/components/ui/switch";
 
 import type { Route } from "./+types/product.page";
 import { ProductCard } from "~/components/product-card";
+import { getCookieSession } from "~/lib/cookie.server";
+import { createClient } from "~/lib/supabase.server";
 import { useRoleStore } from "~/stores/user.store";
-import { getCookieSession } from "~/utils/cookie.server";
-import { createClient } from "~/utils/supabase.server";
+import { createThumbnail } from "~/lib/image-processor.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Products | Caferium" },
@@ -54,6 +55,7 @@ interface Product {
   name: string;
   description?: string;
   imageUrl?: string;
+  imageThumbUrl?: string;
   [key: string]: any;
 }
 
@@ -77,6 +79,7 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
       name: item.name,
       description: item.description,
       imageUrl: item.image_url,
+      imageThumbUrl: item.image_thumb_url,
       updatedAt: item.updated_at,
     }));
     // console.log("products.R", products);
@@ -138,15 +141,19 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       const { name, description } = submission.data;
 
       let imageUrl: string | null = null;
+      let imageThumbUrl: string | null = null;
       const imageFile = formData.get("image") as File;
 
       if (imageFile && imageFile.size > 0) {
-        const filePath = `${cafeId}/product/${uuidv4()}-${imageFile.name}`;
-        const { error: uploadError } = await supabase.storage
+        // 1. 원본 이미지 업로드
+        const originalFilePath = `${cafeId}/product/${uuidv4()}-original-${imageFile.name}`;
+        const { error: originalUploadError } = await supabase.storage
           .from("images")
-          .upload(filePath, imageFile);
+          .upload(originalFilePath, imageFile, {
+            contentType: imageFile.type, // 원본 MIME 타입 지정
+          });
 
-        if (uploadError) {
+        if (originalUploadError) {
           return new Response(
             JSON.stringify({
               ok: false,
@@ -159,13 +166,36 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
           );
         }
 
-        imageUrl = supabase.storage.from("images").getPublicUrl(filePath)
+        imageUrl = supabase.storage.from("images").getPublicUrl(originalFilePath)
           .data.publicUrl;
+
+        // 2. 썸네일 생성 및 업로드
+        try {
+          const { buffer: thumbBuffer, mimeType: thumbMimeType } = await createThumbnail(imageFile);
+          const thumbFilePath = `${cafeId}/product/${uuidv4()}-thumb-${imageFile.name.split('.').slice(0, -1).join('.')}.webp`; // 썸네일은 webp로 고정
+          
+          const { error: thumbUploadError } = await supabase.storage
+            .from("images")
+            .upload(thumbFilePath, thumbBuffer, {
+              contentType: thumbMimeType, // 썸네일 MIME 타입 지정
+            });
+
+          if (thumbUploadError) {
+            console.error("썸네일 업로드 실패:", thumbUploadError);
+            // 썸네일 업로드 실패 시 원본만 저장하고 계속 진행하거나, 더 엄격하게 에러 처리
+            // 여기서는 경고만 출력하고 null로 처리
+          } else {
+            imageThumbUrl = supabase.storage.from("images").getPublicUrl(thumbFilePath).data.publicUrl;
+          }
+        } catch (imageProcessError) {
+          console.error("이미지 처리(썸네일 생성) 실패:", imageProcessError);
+          // 썸네일 생성 실패 시에도 원본만 저장하고 계속 진행
+        }
       }
 
       const { error } = await supabase
         .from("products")
-        .insert({ name, description, image_url: imageUrl, cafe_id: cafeId });
+        .insert({ name, description, image_url: imageUrl, image_thumb_url: imageThumbUrl, cafe_id: cafeId });
 
       if (error) {
         return new Response(
@@ -203,6 +233,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         name?: string;
         description?: string;
         image_url?: string | null;
+        image_thumb_url?: string | null;
       } = { name, description };
       const imageFile = formData.get("image") as File;
       const removeImage = formData.get("removeImage") === "true"; // 이미지 삭제 스위치 값
@@ -210,7 +241,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       // 기존 이미지 URL 조회 (삭제를 위해)
       const { data: existingProduct, error: fetchError } = await supabase
         .from("products")
-        .select("image_url")
+        .select("image_url, image_thumb_url")
         .eq("id", productId)
         .single();
 
@@ -226,19 +257,24 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 
       // 새 이미지 업로드 또는 기존 이미지 삭제 처리
       if (imageFile && imageFile.size > 0 && !removeImage) {
-        // 새 이미지 업로드 전, 기존 이미지 삭제
+        // 새 이미지 업로드 전, 기존 이미지(원본 및 썸네일) 삭제
         if (existingProduct.image_url) {
-          const oldFilePath = existingProduct.image_url.split("/images/")[1];
-          await supabase.storage.from("images").remove([oldFilePath]);
+          const oldOriginalFilePath = existingProduct.image_url.split("/images/")[1];
+          const filesToDelete = [oldOriginalFilePath];
+          if (existingProduct.image_thumb_url) { // ✅ 썸네일 경로도 삭제 목록에 추가
+            const oldThumbFilePath = existingProduct.image_thumb_url.split("/images/")[1];
+            filesToDelete.push(oldThumbFilePath);
+          }
+          await supabase.storage.from("images").remove(filesToDelete); // 일괄 삭제
         }
 
-        // 새 이미지 업로드
-        const filePath = `${cafeId}/product/${uuidv4()}-${imageFile.name}`;
-        const { error: uploadError } = await supabase.storage
+        // 1. 새 원본 이미지 업로드
+        const originalFilePath = `${cafeId}/product/${uuidv4()}-original-${imageFile.name}`;
+        const { error: originalUploadError } = await supabase.storage
           .from("images")
-          .upload(filePath, imageFile);
+          .upload(originalFilePath, imageFile, { contentType: imageFile.type });
 
-        if (uploadError) {
+        if (originalUploadError) {
           return new Response(
             JSON.stringify({
               ok: false,
@@ -252,12 +288,37 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         }
         updateData.image_url = supabase.storage
           .from("images")
-          .getPublicUrl(filePath).data.publicUrl;
-      } else if (removeImage && existingProduct.image_url) {
-        // 이미지 삭제 요청 처리
-        const oldFilePath = existingProduct.image_url.split("/images/")[1];
-        await supabase.storage.from("images").remove([oldFilePath]);
+          .getPublicUrl(originalFilePath).data.publicUrl;
+
+        // 2. 새 썸네일 생성 및 업로드
+        try {
+          const { buffer: thumbBuffer, mimeType: thumbMimeType } = await createThumbnail(imageFile);
+          const thumbFilePath = `${cafeId}/product/${uuidv4()}-thumb-${imageFile.name.split('.').slice(0, -1).join('.')}.webp`; // 썸네일은 webp로 고정
+          
+          const { error: thumbUploadError } = await supabase.storage
+            .from("images")
+            .upload(thumbFilePath, thumbBuffer, { contentType: thumbMimeType });
+
+          if (thumbUploadError) {
+            console.error("새 썸네일 업로드 실패:", thumbUploadError);
+          } else {
+            updateData.image_thumb_url = supabase.storage.from("images").getPublicUrl(thumbFilePath).data.publicUrl;
+          }
+        } catch (imageProcessError) {
+          console.error("새 이미지 처리(썸네일 생성) 실패:", imageProcessError);
+        }
+      } else if (removeImage) { // 이미지 삭제 요청 처리 (원본 및 썸네일 모두)
+        if (existingProduct.image_url) {
+          const oldOriginalFilePath = existingProduct.image_url.split("/images/")[1];
+          const filesToDelete = [oldOriginalFilePath];
+          if (existingProduct.image_thumb_url) { // ✅ 썸네일 경로도 삭제 목록에 추가
+            const oldThumbFilePath = existingProduct.image_thumb_url.split("/images/")[1];
+            filesToDelete.push(oldThumbFilePath);
+          }
+          await supabase.storage.from("images").remove(filesToDelete);
+        }
         updateData.image_url = null;
+        updateData.image_thumb_url = null; // ✅ 썸네일 URL도 null로 설정
       } else if (
         imageFile.size === 0 &&
         !removeImage &&
@@ -265,6 +326,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       ) {
         // 이미지 파일이 없고, 삭제 요청도 없으면 기존 이미지 유지
         updateData.image_url = existingProduct.image_url;
+        updateData.image_thumb_url = existingProduct.image_thumb_url;
       } else if (
         imageFile.size === 0 &&
         !removeImage &&
@@ -272,6 +334,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       ) {
         // 이미지 파일이 없고, 삭제 요청도 없고, 기존 이미지도 없으면 null 유지
         updateData.image_url = null;
+        updateData.image_thumb_url = null;
       }
 
       const { error } = await supabase
@@ -314,7 +377,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 
       const { data: productToDelete, error: selectError } = await supabase
         .from("products")
-        .select("image_url, menus(id)") // 연결된 메뉴가 있는지 확인
+        .select("image_url, image_thumb_url, menus(id)") // 연결된 메뉴가 있는지 확인
         .eq("id", productId)
         .single();
 
@@ -342,9 +405,15 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         );
       }
 
-      if (productToDelete.image_url) {
-        const filePath = productToDelete.image_url.split("/images/")[1];
-        await supabase.storage.from("images").remove([filePath]);
+      if (productToDelete.image_url) { // ✅ 원본 이미지 경로
+        const originalFilePath = productToDelete.image_url.split("/images/")[1];
+        const filesToDelete = [originalFilePath];
+
+        if (productToDelete.image_thumb_url) { // ✅ 썸네일 이미지 경로
+          const thumbFilePath = productToDelete.image_thumb_url.split("/images/")[1];
+          filesToDelete.push(thumbFilePath);
+        }
+        await supabase.storage.from("images").remove(filesToDelete); // 일괄 삭제
       }
 
       const { error } = await supabase
@@ -570,6 +639,7 @@ export default function ProductsPage() {
             name={product.name}
             description={product.description}
             imageUrl={product.imageUrl}
+            imageThumbUrl={product.imageThumbUrl}
             action={
               ["SA", "MA"].includes(roleCode!) && (
                 // 매니저일 경우: 수정/삭제 버튼

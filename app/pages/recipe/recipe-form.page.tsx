@@ -11,9 +11,9 @@ import {
 import { Trash2 } from "lucide-react";
 
 import type { Route } from "./+types/recipe-form.page";
+import { getCookieSession } from "~/lib/cookie.server";
+import { createClient } from "~/lib/supabase.server";
 import { useRoleStore } from "~/stores/user.store";
-import { getCookieSession } from "~/utils/cookie.server";
-import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => {
   const { recipeId } = useParams<{ recipeId: string }>();

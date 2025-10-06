@@ -1,9 +1,9 @@
+import { Coffee, UserRound, Briefcase, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { Form, redirect, useNavigation } from "react-router-dom";
-import { Coffee, UserRound, Briefcase, LoaderCircle } from "lucide-react";
 
 import type { Route } from "./+types/login.page";
-import { createClient } from "~/utils/supabase.server";
+import { createClient } from "~/lib/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Login | Caferium" },

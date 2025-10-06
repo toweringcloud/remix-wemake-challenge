@@ -13,7 +13,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:typegen": "npx supabase gen types typescript --project-id mkhmxtzdvkpqqdmjqnmb > ./app/models/database.types.ts",
+    "db:typegen": "npx supabase gen types typescript --project-id mkhmxtzdvkpqqdmjqnmb > ./app/types/database.types.ts",
     "deploy:cf": "bun run build && wrangler pages deploy",
     "deploy:fi": "fly deploy --dockerfile Dockerfile"
   },
@@ -55,6 +55,7 @@
     "react-router": "^7.7.1",
     "react-router-dom": "^7.7.1",
     "resend": "^6.1.0",
+    "sharp": "^0.34.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",

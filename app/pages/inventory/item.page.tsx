@@ -1,5 +1,11 @@
-import { useState } from "react";
 import { Plus, Save, Trash2 } from "lucide-react";
+import { useState } from "react";
+import {
+  redirect,
+  useParams,
+  type LoaderFunction,
+  type LoaderFunctionArgs,
+} from "react-router";
 
 import {
   Select,
@@ -10,15 +16,9 @@ import {
 } from "~/components/ui/select";
 
 import type { Route } from "./+types/item.page";
+import { getCookieSession } from "~/lib/cookie.server";
+import { createClient } from "~/lib/supabase.server";
 import { useRoleStore } from "~/stores/user.store";
-import {
-  redirect,
-  useParams,
-  type LoaderFunction,
-  type LoaderFunctionArgs,
-} from "react-router";
-import { getCookieSession } from "~/utils/cookie.server";
-import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Item List | Caferium" },

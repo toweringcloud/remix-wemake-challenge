@@ -4,7 +4,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 import type { Route } from "./+types/update-cafe-ments";
 import { updateCafeMents } from "~/apis/cafe.mutation";
-import createClient from "~/utils/supabase.client";
+import createClient from "~/lib/supabase.client";
 
 const openai = new OpenAI();
 

@@ -26,9 +26,9 @@ import { Label } from "~/components/ui/label";
 
 import type { Route } from "./+types/stock.page";
 import { StockCard } from "~/components/stock-card";
+import { getCookieSession } from "~/lib/cookie.server";
+import { createClient } from "~/lib/supabase.server";
 import { useRoleStore } from "~/stores/user.store";
-import { getCookieSession } from "~/utils/cookie.server";
-import { createClient } from "~/utils/supabase.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Stocks | Caferium" },

@@ -13,7 +13,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { Toaster } from "~/components/ui/sonner";
 import { useRoleStore } from "./stores/user.store";
-import { createClient } from "./utils/supabase.server";
+import { createClient } from "./lib/supabase.server";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

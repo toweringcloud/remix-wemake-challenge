@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "~/models/database.types";
+import type { Database } from "~/types/database.type";
 
 export const updateCafeMents = async (
   client: SupabaseClient<Database>,

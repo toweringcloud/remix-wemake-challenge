@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "~/models/database.types";
+import type { Database } from "~/types/database.type";
 
 const client = createClient<Database>(
   process.env.SUPABASE_URL!,

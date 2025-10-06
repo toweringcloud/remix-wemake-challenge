@@ -4,8 +4,8 @@ import { Outlet, useLoaderData } from "react-router-dom";
 import type { Route } from "./+types/dashboard.layout";
 import Sidebar from "~/components/layout/sidebar";
 import { useCafeStore } from "~/stores/cafe.store";
-import { getCookieSession } from "~/utils/cookie.server";
-import { createClient } from "~/utils/supabase.server";
+import { getCookieSession } from "~/lib/cookie.server";
+import { createClient } from "~/lib/supabase.server";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   try {
