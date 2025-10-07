@@ -77,6 +77,7 @@ interface Menu {
   price: number;
   status: string;
   category: string;
+  productId: number;
   [key: string]: any;
 }
 
@@ -133,18 +134,23 @@ export const loader: LoaderFunction = async ({
 
 // CUD 작업 시 발생하는 필드 에러들을 클라이언트에게 반환할 때 사용할 에러 타입
 type FieldErrors = {
+  productId?: string[];
   name?: string[];
   description?: string[];
-  isHot?: string[];
+  temperature?: string[];
   price?: string[];
   image?: string[];
 };
 
 // ✅ zod를 사용하여 유효성 검사 스키마를 정의합니다.
 const schemaForInsert = z.object({
+  productId: z.preprocess(
+    (a) => parseInt(z.string().parse(a)), // 문자열을 숫자로 변환
+    z.number().min(1, { message: "상품 카테고리를 선택해주세요." }) // ✅ 1 이상이어야 함 (0은 '전체'이므로)
+  ),
   name: z.string().min(1, { message: "메뉴 이름은 필수입니다." }),
   description: z.string().optional(),
-  isHot: z.enum(["hot", "ice", "none"], {
+  temperature: z.enum(["hot", "ice", "none"], {
     errorMap: () => ({ message: "유효하지 않은 온도 선택입니다." }),
   }),
   price: z
@@ -154,11 +160,16 @@ const schemaForInsert = z.object({
     )
     .pipe(z.number().int({ message: "가격은 정수여야 합니다." })), // ✅ 가격은 정수여야 함
 });
+
 const schemaForUpdate = z.object({
+  productId: z.preprocess(
+    (a) => parseInt(z.string().parse(a)), // 문자열을 숫자로 변환
+    z.number().min(1, { message: "상품 카테고리를 선택해주세요." }) // ✅ 1 이상이어야 함
+  ),
   id: z.string().min(1, { message: "메뉴 아이디는 필수입니다." }),
   name: z.string().min(1, { message: "메뉴 이름은 필수입니다." }),
   description: z.string().optional(),
-  isHot: z.enum(["hot", "ice", "none"], {
+  temperature: z.enum(["hot", "ice", "none"], {
     errorMap: () => ({ message: "유효하지 않은 온도 선택입니다." }),
   }),
   price: z
@@ -168,6 +179,7 @@ const schemaForUpdate = z.object({
     )
     .pipe(z.number().int({ message: "가격은 정수여야 합니다." })), // ✅ 가격은 정수여야 함
 });
+
 const schemaForDelete = z.object({
   id: z.string().min(1, { message: "메뉴 아이디는 필수입니다." }),
 });
@@ -218,12 +230,18 @@ export const action: ActionFunction = async ({
           }
         );
       }
-      const { name, description, isHot, price } = submission.data;
+      const {
+        productId: selectedProductId,
+        name,
+        description,
+        temperature,
+        price,
+      } = submission.data;
       console.log("menus.C", submission.data);
 
-      // isHot 값을 boolean으로 변환 (supabase 컬럼 타입에 맞춤)
+      // temperature 값을 boolean으로 변환 (supabase 컬럼 타입에 맞춤)
       const isHotBoolean =
-        isHot === "hot" ? true : isHot === "ice" ? false : null;
+        temperature === "hot" ? true : temperature === "ice" ? false : null;
 
       let imageUrl: string | null = null;
       let imageThumbUrl: string | null = null;
@@ -291,6 +309,7 @@ export const action: ActionFunction = async ({
         price,
         image_url: imageUrl,
         image_thumb_url: imageThumbUrl,
+        product_id: selectedProductId,
         cafe_id: cafeId,
       });
 
@@ -324,14 +343,22 @@ export const action: ActionFunction = async ({
           }
         );
       }
-      const { id: menuId, name, description, isHot, price } = submission.data;
+      const {
+        productId: selectedProductId,
+        id: menuId,
+        name,
+        description,
+        temperature,
+        price,
+      } = submission.data;
       console.log("menus.U", submission.data);
 
-      // isHot 값을 boolean으로 변환 (supabase 컬럼 타입에 맞춤)
+      // temperature 값을 boolean으로 변환 (supabase 컬럼 타입에 맞춤)
       const isHotBoolean =
-        isHot === "hot" ? true : isHot === "ice" ? false : null;
+        temperature === "hot" ? true : temperature === "ice" ? false : null;
 
       const updateData: {
+        product_id: number;
         name?: string;
         description?: string;
         is_hot?: boolean | null;
@@ -339,6 +366,7 @@ export const action: ActionFunction = async ({
         image_url?: string | null;
         image_thumb_url?: string | null;
       } = {
+        product_id: selectedProductId,
         name,
         description,
         is_hot: isHotBoolean,
@@ -463,7 +491,6 @@ export const action: ActionFunction = async ({
         .from("menus")
         .update(updateData)
         .eq("id", menuId)
-        // .eq("product_id", productId)
         .eq("cafe_id", cafeId);
 
       if (error) {
@@ -549,7 +576,6 @@ export const action: ActionFunction = async ({
         .from("menus")
         .delete()
         .eq("id", menuId)
-        // .eq("product_id", productId)
         .eq("cafe_id", cafeId);
 
       if (error) {
@@ -591,7 +617,7 @@ export default function MenusPage() {
   const navigate = useNavigate();
   const navigation = useNavigation();
 
-  const loaderData = useLoaderData() as [Product[], Menu[]];
+  const loaderData = useLoaderData() as [Product[], Menu[], string];
   if (!loaderData || !productId) return;
 
   // 상품 목록 조회
@@ -599,20 +625,32 @@ export default function MenusPage() {
   const theProduct = products.filter(
     (product) => product.id === parseInt(productId)
   );
-  // console.log("menus.loaderData[0]", products, theProduct[0]);
 
   // 메뉴 목록 조회
   const menus = loaderData[1];
   // console.log("menus.loaderData[1]", menus);
 
+  // 로더에서 반환된 현재 URL의 productId (문자열)
+  const currentProductIdFromLoader = loaderData[2];
+
   // 메뉴 선택 콤보
-  const [selectedProduct, setSelectedProduct] = useState(
-    theProduct[0].name || "전체"
+  const [selectedProductId, setSelectedProductId] = useState(
+    currentProductIdFromLoader || productId
   );
+  const handleMainSelectChange = (value: string) => {
+    setSelectedProductId(value); // UI 상태 업데이트
+    navigate(`/dashboard/products/${value}/menus`); // URL 경로 변경
+  };
+
+  const [selectedProduct, setSelectedProduct] = useState(() => {
+    return theProduct[0].name || "전체";
+  });
   const filteredMenus =
-    selectedProduct === "전체"
+    selectedProductId === "0"
       ? menus
-      : menus.filter((menu: Menu) => menu.category === selectedProduct);
+      : menus.filter(
+          (menu: Menu) => menu.productId === parseInt(selectedProductId)
+        );
 
   // 메뉴 등록/수정/삭제 결과 조회
   const actionData = useActionData() as {
@@ -627,6 +665,7 @@ export default function MenusPage() {
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isRemoveImage, setIsRemoveImage] = useState(false);
+  const [editProductSelection, setEditProductSelection] = useState<string>("");
 
   // 폼 제출이 완료되었는지 확인
   const isSubmitting = navigation.state === "submitting";
@@ -675,9 +714,10 @@ export default function MenusPage() {
     setImagePreview(menu.imageUrl || null);
     setIsRemoveImage(false);
     setIsEditDialogOpen(true);
+    setEditProductSelection(menu.productId.toString());
   };
 
-  // 상품 삭제
+  // 메뉴 삭제
   const deleteFormRef = useRef<HTMLFormElement>(null);
   const [oneToDelete, setOneToDelete] = useState<Menu | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -741,22 +781,22 @@ export default function MenusPage() {
     }
 
     // 폼 제출이 끝났고(idle), 작업이 성공적으로 완료되었다면
-    setIsNewDialogOpen(false);
-    setIsEditDialogOpen(false);
-    setIsAlertOpen(false);
-    setImagePreview(null);
-    setIsRemoveImage(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (!isSubmitting && actionData?.ok) {
+      setIsNewDialogOpen(false);
+      setIsEditDialogOpen(false);
+      setIsAlertOpen(false);
+      setImagePreview(null);
+      setIsRemoveImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      // loader가 자동으로 재실행되므로, navigate(".", { replace: true });는 불필요
+      // 그러나 현재 페이지의 params가 변경되지 않는 경우 Remix는 자동으로 리로드하지 않을 수 있습니다.
+      // 이 경우 `navigate(".", { replace: true })`를 호출하여 강제로 loader를 재실행시킬 수 있습니다.
+      // 하지만 이 경우 URL도 함께 변경될 수 있으니 주의.
+      // 현재는 `useLoaderData`를 직접 사용하므로 `loaderData` 자체가 갱신됩니다.
+      // 따라서 `navigate`는 더 이상 필요 없습니다.
     }
-    // navigate(".", { replace: true });
-
-    // loader가 자동으로 재실행되므로, navigate(".", { replace: true });는 불필요
-    // 그러나 현재 페이지의 params가 변경되지 않는 경우 Remix는 자동으로 리로드하지 않을 수 있습니다.
-    // 이 경우 `navigate(".", { replace: true })`를 호출하여 강제로 loader를 재실행시킬 수 있습니다.
-    // 하지만 이 경우 URL도 함께 변경될 수 있으니 주의.
-    // 현재는 `useLoaderData`를 직접 사용하므로 `loaderData` 자체가 갱신됩니다.
-    // 따라서 `navigate`는 더 이상 필요 없습니다.
   }, [actionData]);
 
   // 페이지 접근 권한 확인
@@ -776,13 +816,16 @@ export default function MenusPage() {
         <div className="flex flex-row gap-4">
           <h1 className="text-3xl font-bold text-amber-800">메뉴</h1>
           {/* 상품 선택 콤보 */}
-          <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-            <SelectTrigger className="w-[180px] bg-white">
+          <Select
+            value={selectedProductId}
+            onValueChange={handleMainSelectChange}
+          >
+            <SelectTrigger className="w-[120px] bg-white">
               <SelectValue placeholder="카테고리 선택" />
             </SelectTrigger>
             <SelectContent className="bg-white shadow-md border border-stone-200">
               {products.map((product) => (
-                <SelectItem key={product.id} value={product.name}>
+                <SelectItem key={product.id} value={product.id.toString()}>
                   {product.name}
                 </SelectItem>
               ))}
@@ -841,7 +884,7 @@ export default function MenusPage() {
           <DialogHeader>
             <DialogTitle>메뉴 등록</DialogTitle>
             <DialogDescription>
-              메뉴의 이름, 설명, 이미지를 등록합니다.
+              메뉴의 이름, 설명, 가격, 이미지를 등록합니다.
             </DialogDescription>
           </DialogHeader>
           <Form
@@ -851,7 +894,39 @@ export default function MenusPage() {
           >
             <div className="grid gap-4 pt-2 pb-8">
               <input type="hidden" name="actionType" value="C" />
+              {/* <input type="hidden" name="productId" value={selectedProductId} /> */}
 
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="productId" className="text-right">
+                  카테고리
+                </Label>
+                <Select
+                  name="productId"
+                  defaultValue={selectedProductId || ""}
+                  onValueChange={setEditProductSelection}
+                >
+                  <SelectTrigger className="w-[120px] col-span-3 bg-white">
+                    <SelectValue placeholder="상품 카테고리 선택" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white shadow-md border border-stone-200">
+                    {products
+                      .filter((p) => p.id !== 0)
+                      .map((product) => (
+                        <SelectItem
+                          key={product.id}
+                          value={product.id.toString()}
+                        >
+                          {product.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {actionData?.errors?.productId && (
+                  <p className="col-start-2 col-span-3 text-sm text-red-500">
+                    {actionData.errors.productId[0]}
+                  </p>
+                )}
+              </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   이름
@@ -889,10 +964,12 @@ export default function MenusPage() {
                 )}
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">온도</Label>
+                <Label htmlFor="temperature" className="text-right">
+                  온도
+                </Label>
                 <RadioGroup
-                  id="isHot"
-                  name="isHot"
+                  id="temperature"
+                  name="temperature"
                   className="col-span-3 flex items-center space-x-4"
                   defaultValue="none"
                 >
@@ -909,9 +986,9 @@ export default function MenusPage() {
                     <Label htmlFor="r-none">해당없음</Label>
                   </div>
                 </RadioGroup>
-                {actionData?.errors?.isHot && (
+                {actionData?.errors?.temperature && (
                   <p className="col-start-2 col-span-3 text-sm text-red-500">
-                    {actionData.errors.isHot[0]}
+                    {actionData.errors.temperature[0]}
                   </p>
                 )}
               </div>
@@ -926,7 +1003,7 @@ export default function MenusPage() {
                   placeholder="원 단위"
                   className="col-span-3"
                   autoComplete="off"
-                  defaultValue=""
+                  defaultValue="0"
                 />
                 {actionData?.errors?.price && (
                   <p className="col-start-2 col-span-3 text-sm text-red-500">
@@ -1012,7 +1089,7 @@ export default function MenusPage() {
           <DialogHeader>
             <DialogTitle>"{selectedMenu?.name}" 메뉴 수정</DialogTitle>
             <DialogDescription>
-              메뉴의 이름, 가격, 이미지를 수정합니다.
+              메뉴의 카테고리, 이름, 설명, 가격, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
           <Form
@@ -1024,6 +1101,41 @@ export default function MenusPage() {
               <input type="hidden" name="actionType" value="U" />
               <input type="hidden" name="id" value={selectedMenu?.id} />
 
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="productId" className="text-right">
+                  카테고리
+                </Label>
+                <Select
+                  name="productId"
+                  defaultValue={
+                    editProductSelection ||
+                    selectedMenu?.productId.toString() ||
+                    ""
+                  }
+                  onValueChange={setEditProductSelection}
+                >
+                  <SelectTrigger className="w-[120px] col-span-3 bg-white">
+                    <SelectValue placeholder="상품 카테고리 선택" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white shadow-md border border-stone-200">
+                    {products
+                      .filter((p) => p.id !== 0)
+                      .map((product) => (
+                        <SelectItem
+                          key={product.id}
+                          value={product.id.toString()}
+                        >
+                          {product.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {actionData?.errors?.productId && (
+                  <p className="col-start-2 col-span-3 text-sm text-red-500">
+                    {actionData.errors.productId[0]}
+                  </p>
+                )}
+              </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   이름
@@ -1063,12 +1175,12 @@ export default function MenusPage() {
                 )}
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="isHot" className="text-right">
+                <Label htmlFor="temperature" className="text-right">
                   온도
                 </Label>
                 <RadioGroup
-                  id="isHot"
-                  name="isHot"
+                  id="temperature"
+                  name="temperature"
                   className="col-span-3 flex items-center space-x-4"
                   defaultValue={
                     selectedMenu?.isHot === undefined
@@ -1091,9 +1203,9 @@ export default function MenusPage() {
                     <Label htmlFor="r-none">해당없음</Label>
                   </div>
                 </RadioGroup>
-                {actionData?.errors?.isHot && (
+                {actionData?.errors?.temperature && (
                   <p className="col-start-2 col-span-3 text-sm text-red-500">
-                    {actionData.errors.isHot[0]}
+                    {actionData.errors.temperature[0]}
                   </p>
                 )}
               </div>

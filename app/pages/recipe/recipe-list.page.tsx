@@ -153,7 +153,7 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
           <h1 className="text-3xl font-bold text-amber-800">레시피</h1>
           {/* 상품 선택 콤보 */}
           <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-            <SelectTrigger className="w-[180px] bg-white">
+            <SelectTrigger className="w-[120px] bg-white">
               <SelectValue placeholder="카테고리 선택" />
             </SelectTrigger>
             <SelectContent className="bg-white shadow-md border border-stone-200">
@@ -166,14 +166,14 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
           </Select>
         </div>
 
-        {/* 스토어에서 가져온 role 값으로 매니저 여부를 확인합니다. */}
-        {roleCode === "MA" && (
+        {/* 레시피는 메뉴 등록 시에 자동으로 생성되며, 수정 및 삭제만 가능합니다. */}
+        {/* {roleCode === "MA" && (
           <Link to="/dashboard/recipes/new">
             <button className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center">
               <Plus className="h-4 w-4" /> 등록
             </button>
           </Link>
-        )}
+        )} */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

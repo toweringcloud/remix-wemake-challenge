@@ -192,7 +192,7 @@ export default function ItemPage({ loaderData }: Route.ComponentProps) {
         <div className="flex flex-row gap-4">
           <h1 className="text-3xl font-bold text-amber-800">재고</h1>
           <Select value={selectedStock} onValueChange={setSelectedStock}>
-            <SelectTrigger className="w-[180px] bg-white">
+            <SelectTrigger className="w-[160px] bg-white">
               <SelectValue placeholder="카테고리 선택" />
             </SelectTrigger>
             <SelectContent className="bg-white shadow-md border border-stone-200">

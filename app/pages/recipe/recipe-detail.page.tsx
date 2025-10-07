@@ -40,7 +40,7 @@ export const loader: LoaderFunction = async ({
     .select(
       `
       *,
-      menus(id, image_url),
+      menus(id, image_url, image_thumb_url),
       recipe_ingredients (
         quantity,
         ingredients (
@@ -66,8 +66,8 @@ export const loader: LoaderFunction = async ({
       amount: i.quantity,
     })),
     steps: data.steps,
-    imageUrl: data.menus.image_url,
-    videoUrl: data.video,
+    imageUrl: data.menus.image_thumb_url,
+    videoUrl: data.video_url,
     updatedAt: data.updated_at,
   };
   console.log("recipe-detail.R", recipe);
@@ -97,10 +97,11 @@ export default function RecipeDetailPage() {
   // ✅ imageUrl prop이 변경될 때마다 에러 상태를 초기화
   useEffect(() => {
     setHasLoadError(false);
-  }, [recipe.videoUrl]);
+  }, [recipe.imageUrl]);
 
   // ✅ 이미지가 없거나 로드 에러가 발생했는지 확인
-  const showFallback = hasLoadError || !recipe.videoUrl;
+  // const showFallback = hasLoadError || !recipe.videoUrl;
+  const showFallback = hasLoadError || !recipe.imageUrl;
 
   if (!recipe) {
     return (
