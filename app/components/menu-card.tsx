@@ -1,5 +1,5 @@
 import { Flame, Snowflake } from "lucide-react";
-import React, { useState, useEffect } from "react"; // ✅ useState, useEffect import
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import { PlaceholderImage } from "~/components/common/placeholder-image";
@@ -16,10 +16,11 @@ interface MenuCardProps {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
+  isHot?: boolean;
+  price: number;
   status: string;
   category: string;
-  isHot?: boolean;
-  imageUrl?: string;
   action?: React.ReactNode;
 }
 
@@ -27,10 +28,11 @@ export function MenuCard({
   id,
   name,
   description,
+  imageUrl,
+  isHot,
+  price,
   status,
   category,
-  isHot,
-  imageUrl,
   action,
 }: MenuCardProps) {
   const [hasLoadError, setHasLoadError] = useState(false);
@@ -64,9 +66,8 @@ export function MenuCard({
               <Link to={`/dashboard/recipes/${id}`}>
                 <CardTitle className="text-xl font-bold text-amber-800 hover:underline flex flex-row gap-1">
                   {name}{" "}
-                  {/* {["커피", "라떼"].find((i) => i === category) != undefined && */}
                   {category !== "디저트" ? (
-                    isHot ? (
+                    isHot === undefined ? null : isHot === true ? (
                       <Flame className="h-4 w-4 text-red-500" />
                     ) : (
                       <Snowflake className="h-4 w-4 text-blue-500" />
@@ -77,9 +78,8 @@ export function MenuCard({
             </CardHeader>
             <CardContent className="flex-grow">
               <CardDescription className="text-stone-600">
-                {description || "no recipe available!"}
+                {description}
               </CardDescription>
-              <div className="text-xs py-2">{status}</div>
             </CardContent>
             <CardFooter>{action}</CardFooter>
           </div>

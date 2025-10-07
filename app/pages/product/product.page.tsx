@@ -11,8 +11,8 @@ import {
   type LoaderFunction,
 } from "react-router";
 import { toast } from "sonner";
-import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
 
 import {
   AlertDialog,
@@ -40,9 +40,9 @@ import { Switch } from "~/components/ui/switch";
 import type { Route } from "./+types/product.page";
 import { ProductCard } from "~/components/product-card";
 import { getCookieSession } from "~/lib/cookie.server";
+import { createThumbnail } from "~/lib/image.server";
 import { createClient } from "~/lib/supabase.server";
 import { useRoleStore } from "~/stores/user.store";
-import { createThumbnail } from "~/lib/image-processor.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Products | Caferium" },
@@ -55,7 +55,6 @@ interface Product {
   name: string;
   description?: string;
   imageUrl?: string;
-  imageThumbUrl?: string;
   [key: string]: any;
 }
 
@@ -88,17 +87,17 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
 };
 
 // ✅ zod를 사용하여 유효성 검사 스키마를 정의합니다.
-const productSchemaForInsert = z.object({
+const schemaForInsert = z.object({
   name: z.string().min(1, { message: "상품 이름은 필수입니다." }),
   description: z.string().optional(),
 });
-const productSchemaForUpdate = z.object({
-  id: z.string().min(1, { message: "ID is required for update" }),
+const schemaForUpdate = z.object({
+  id: z.string().min(1, { message: "상품 아이디는 필수입니다." }),
   name: z.string().min(1, { message: "상품 이름은 필수입니다." }),
   description: z.string().optional(),
 });
-const productSchemaForDelete = z.object({
-  id: z.string().min(1, { message: "ID is required for delete" }),
+const schemaForDelete = z.object({
+  id: z.string().min(1, { message: "상품 아이디는 필수입니다." }),
 });
 
 export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
@@ -122,11 +121,13 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
     }
 
     const { supabase } = createClient(request);
+    const storageInstance = supabase.storage.from("images");
+    const storageDivision = `${cafeId}/product`; // 상품 이미지용 버킷 카테고리
 
     // --- C: 생성 (Create) ---
     if (actionType === "C") {
       // ✅ formData 유효성 검사 실패 시, 에러 메시지를 클라이언트로 반환합니다.
-      const submission = productSchemaForInsert.safeParse(
+      const submission = schemaForInsert.safeParse(
         Object.fromEntries(formData)
       );
       if (!submission.success) {
@@ -146,12 +147,14 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 
       if (imageFile && imageFile.size > 0) {
         // 1. 원본 이미지 업로드
-        const originalFilePath = `${cafeId}/product/${uuidv4()}-original-${imageFile.name}`;
-        const { error: originalUploadError } = await supabase.storage
-          .from("images")
-          .upload(originalFilePath, imageFile, {
+        const originalFilePath = `${storageDivision}/${uuidv4()}-original-${imageFile.name}`;
+        const { error: originalUploadError } = await storageInstance.upload(
+          originalFilePath,
+          imageFile,
+          {
             contentType: imageFile.type, // 원본 MIME 타입 지정
-          });
+          }
+        );
 
         if (originalUploadError) {
           return new Response(
@@ -166,26 +169,30 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
           );
         }
 
-        imageUrl = supabase.storage.from("images").getPublicUrl(originalFilePath)
-          .data.publicUrl;
+        imageUrl =
+          storageInstance.getPublicUrl(originalFilePath).data.publicUrl;
 
         // 2. 썸네일 생성 및 업로드
         try {
-          const { buffer: thumbBuffer, mimeType: thumbMimeType } = await createThumbnail(imageFile);
-          const thumbFilePath = `${cafeId}/product/${uuidv4()}-thumb-${imageFile.name.split('.').slice(0, -1).join('.')}.webp`; // 썸네일은 webp로 고정
-          
-          const { error: thumbUploadError } = await supabase.storage
-            .from("images")
-            .upload(thumbFilePath, thumbBuffer, {
+          const { buffer: thumbBuffer, mimeType: thumbMimeType } =
+            await createThumbnail(imageFile);
+          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb-${imageFile.name.split(".").slice(0, -1).join(".")}.webp`; // 썸네일은 webp로 고정
+
+          const { error: thumbUploadError } = await storageInstance.upload(
+            thumbFilePath,
+            thumbBuffer,
+            {
               contentType: thumbMimeType, // 썸네일 MIME 타입 지정
-            });
+            }
+          );
 
           if (thumbUploadError) {
             console.error("썸네일 업로드 실패:", thumbUploadError);
             // 썸네일 업로드 실패 시 원본만 저장하고 계속 진행하거나, 더 엄격하게 에러 처리
             // 여기서는 경고만 출력하고 null로 처리
           } else {
-            imageThumbUrl = supabase.storage.from("images").getPublicUrl(thumbFilePath).data.publicUrl;
+            imageThumbUrl =
+              storageInstance.getPublicUrl(thumbFilePath).data.publicUrl;
           }
         } catch (imageProcessError) {
           console.error("이미지 처리(썸네일 생성) 실패:", imageProcessError);
@@ -193,9 +200,13 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         }
       }
 
-      const { error } = await supabase
-        .from("products")
-        .insert({ name, description, image_url: imageUrl, image_thumb_url: imageThumbUrl, cafe_id: cafeId });
+      const { error } = await supabase.from("products").insert({
+        name,
+        description,
+        image_url: imageUrl,
+        image_thumb_url: imageThumbUrl,
+        cafe_id: cafeId,
+      });
 
       if (error) {
         return new Response(
@@ -215,7 +226,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 
     // --- U: 수정 (Update) ---
     if (actionType === "U") {
-      const submission = productSchemaForUpdate.safeParse(
+      const submission = schemaForUpdate.safeParse(
         Object.fromEntries(formData)
       );
       if (!submission.success) {
@@ -239,13 +250,13 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       const removeImage = formData.get("removeImage") === "true"; // 이미지 삭제 스위치 값
 
       // 기존 이미지 URL 조회 (삭제를 위해)
-      const { data: existingProduct, error: fetchError } = await supabase
+      const { data: existingOne, error: fetchError } = await supabase
         .from("products")
         .select("image_url, image_thumb_url")
         .eq("id", productId)
         .single();
 
-      if (fetchError || !existingProduct) {
+      if (fetchError || !existingOne) {
         return new Response(
           JSON.stringify({ ok: false, error: "Product not found" }),
           {
@@ -258,21 +269,26 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       // 새 이미지 업로드 또는 기존 이미지 삭제 처리
       if (imageFile && imageFile.size > 0 && !removeImage) {
         // 새 이미지 업로드 전, 기존 이미지(원본 및 썸네일) 삭제
-        if (existingProduct.image_url) {
-          const oldOriginalFilePath = existingProduct.image_url.split("/images/")[1];
+        if (existingOne.image_url) {
+          const oldOriginalFilePath =
+            existingOne.image_url.split("/images/")[1];
           const filesToDelete = [oldOriginalFilePath];
-          if (existingProduct.image_thumb_url) { // ✅ 썸네일 경로도 삭제 목록에 추가
-            const oldThumbFilePath = existingProduct.image_thumb_url.split("/images/")[1];
+          if (existingOne.image_thumb_url) {
+            // ✅ 썸네일 경로도 삭제 목록에 추가
+            const oldThumbFilePath =
+              existingOne.image_thumb_url.split("/images/")[1];
             filesToDelete.push(oldThumbFilePath);
           }
-          await supabase.storage.from("images").remove(filesToDelete); // 일괄 삭제
+          await storageInstance.remove(filesToDelete); // 일괄 삭제
         }
 
         // 1. 새 원본 이미지 업로드
-        const originalFilePath = `${cafeId}/product/${uuidv4()}-original-${imageFile.name}`;
-        const { error: originalUploadError } = await supabase.storage
-          .from("images")
-          .upload(originalFilePath, imageFile, { contentType: imageFile.type });
+        const originalFilePath = `${storageDivision}/${uuidv4()}-original-${imageFile.name}`;
+        const { error: originalUploadError } = await storageInstance.upload(
+          originalFilePath,
+          imageFile,
+          { contentType: imageFile.type }
+        );
 
         if (originalUploadError) {
           return new Response(
@@ -286,51 +302,58 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
             }
           );
         }
-        updateData.image_url = supabase.storage
-          .from("images")
-          .getPublicUrl(originalFilePath).data.publicUrl;
+        updateData.image_url =
+          storageInstance.getPublicUrl(originalFilePath).data.publicUrl;
 
         // 2. 새 썸네일 생성 및 업로드
         try {
-          const { buffer: thumbBuffer, mimeType: thumbMimeType } = await createThumbnail(imageFile);
-          const thumbFilePath = `${cafeId}/product/${uuidv4()}-thumb-${imageFile.name.split('.').slice(0, -1).join('.')}.webp`; // 썸네일은 webp로 고정
-          
-          const { error: thumbUploadError } = await supabase.storage
-            .from("images")
-            .upload(thumbFilePath, thumbBuffer, { contentType: thumbMimeType });
+          const { buffer: thumbBuffer, mimeType: thumbMimeType } =
+            await createThumbnail(imageFile);
+          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb-${imageFile.name.split(".").slice(0, -1).join(".")}.webp`; // 썸네일은 webp로 고정
+
+          const { error: thumbUploadError } = await storageInstance.upload(
+            thumbFilePath,
+            thumbBuffer,
+            { contentType: thumbMimeType }
+          );
 
           if (thumbUploadError) {
             console.error("새 썸네일 업로드 실패:", thumbUploadError);
           } else {
-            updateData.image_thumb_url = supabase.storage.from("images").getPublicUrl(thumbFilePath).data.publicUrl;
+            updateData.image_thumb_url =
+              storageInstance.getPublicUrl(thumbFilePath).data.publicUrl;
           }
         } catch (imageProcessError) {
           console.error("새 이미지 처리(썸네일 생성) 실패:", imageProcessError);
         }
-      } else if (removeImage) { // 이미지 삭제 요청 처리 (원본 및 썸네일 모두)
-        if (existingProduct.image_url) {
-          const oldOriginalFilePath = existingProduct.image_url.split("/images/")[1];
+      } else if (removeImage) {
+        // 이미지 삭제 요청 처리 (원본 및 썸네일 모두)
+        if (existingOne.image_url) {
+          const oldOriginalFilePath =
+            existingOne.image_url.split("/images/")[1];
           const filesToDelete = [oldOriginalFilePath];
-          if (existingProduct.image_thumb_url) { // ✅ 썸네일 경로도 삭제 목록에 추가
-            const oldThumbFilePath = existingProduct.image_thumb_url.split("/images/")[1];
+          if (existingOne.image_thumb_url) {
+            // ✅ 썸네일 경로도 삭제 목록에 추가
+            const oldThumbFilePath =
+              existingOne.image_thumb_url.split("/images/")[1];
             filesToDelete.push(oldThumbFilePath);
           }
-          await supabase.storage.from("images").remove(filesToDelete);
+          await storageInstance.remove(filesToDelete);
         }
         updateData.image_url = null;
         updateData.image_thumb_url = null; // ✅ 썸네일 URL도 null로 설정
       } else if (
         imageFile.size === 0 &&
         !removeImage &&
-        existingProduct.image_url
+        existingOne.image_url
       ) {
         // 이미지 파일이 없고, 삭제 요청도 없으면 기존 이미지 유지
-        updateData.image_url = existingProduct.image_url;
-        updateData.image_thumb_url = existingProduct.image_thumb_url;
+        updateData.image_url = existingOne.image_url;
+        updateData.image_thumb_url = existingOne.image_thumb_url;
       } else if (
         imageFile.size === 0 &&
         !removeImage &&
-        !existingProduct.image_url
+        !existingOne.image_url
       ) {
         // 이미지 파일이 없고, 삭제 요청도 없고, 기존 이미지도 없으면 null 유지
         updateData.image_url = null;
@@ -361,7 +384,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 
     // --- D: 삭제 (Delete) ---
     if (actionType === "D") {
-      const submission = productSchemaForDelete.safeParse(
+      const submission = schemaForDelete.safeParse(
         Object.fromEntries(formData)
       );
       if (!submission.success) {
@@ -375,13 +398,13 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       }
       const { id: productId } = submission.data;
 
-      const { data: productToDelete, error: selectError } = await supabase
+      const { data: oneToDelete, error: selectError } = await supabase
         .from("products")
         .select("image_url, image_thumb_url, menus(id)") // 연결된 메뉴가 있는지 확인
         .eq("id", productId)
         .single();
 
-      if (selectError || !productToDelete) {
+      if (selectError || !oneToDelete) {
         return new Response(
           JSON.stringify({ ok: false, error: "Product not found" }),
           {
@@ -391,8 +414,8 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         );
       }
 
-      if (productToDelete.menus && productToDelete.menus.length > 0) {
-        // ✅ 관련 메뉴가 있으면 삭제 거부
+      // ✅ 관련 메뉴가 있으면 삭제 거부
+      if (oneToDelete.menus && oneToDelete.menus.length > 0) {
         return new Response(
           JSON.stringify({
             ok: false,
@@ -405,15 +428,18 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         );
       }
 
-      if (productToDelete.image_url) { // ✅ 원본 이미지 경로
-        const originalFilePath = productToDelete.image_url.split("/images/")[1];
+      if (oneToDelete.image_url) {
+        // ✅ 원본 이미지 경로
+        const originalFilePath = oneToDelete.image_url.split("/images/")[1];
         const filesToDelete = [originalFilePath];
 
-        if (productToDelete.image_thumb_url) { // ✅ 썸네일 이미지 경로
-          const thumbFilePath = productToDelete.image_thumb_url.split("/images/")[1];
+        if (oneToDelete.image_thumb_url) {
+          // ✅ 썸네일 이미지 경로
+          const thumbFilePath =
+            oneToDelete.image_thumb_url.split("/images/")[1];
           filesToDelete.push(thumbFilePath);
         }
-        await supabase.storage.from("images").remove(filesToDelete); // 일괄 삭제
+        await storageInstance.remove(filesToDelete); // 일괄 삭제
       }
 
       const { error } = await supabase
@@ -453,12 +479,14 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
   }
 };
 
+// export default function ProductsPage({ loaderData }: Route.ComponentProps) {
 export default function ProductsPage() {
   const { roleCode, isLoading } = useRoleStore();
   const navigate = useNavigate();
   const navigation = useNavigation(); // ✅ 폼 제출 상태를 추적
 
   // 상품 목록 조회
+  // const [products] = useState<Product[]>(loaderData);
   const products = useLoaderData() as Product[];
   // console.log("products.loaderData", products);
 
@@ -476,11 +504,39 @@ export default function ProductsPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isRemoveImage, setIsRemoveImage] = useState(false);
 
+  // 폼 제출이 완료되었는지 확인
+  const isSubmitting = navigation.state === "submitting";
+
   // 파일 입력 Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 폼 제출이 완료되었는지 확인
-  const isSubmitting = navigation.state === "submitting";
+  // 이미지 파일 선택 핸들러
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setIsRemoveImage(false); // 새 파일 선택 시 이미지 삭제 스위치 비활성화
+    } else {
+      setImagePreview(selectedProduct?.imageUrl || null); // 파일 선택 취소 시 기존 이미지로 돌아감
+    }
+  };
+
+  // 이미지 삭제 스위치 핸들러
+  const handleRemoveImageToggle = (checked: boolean) => {
+    setIsRemoveImage(checked);
+    if (checked) {
+      setImagePreview(null); // 삭제 선택 시 미리보기 제거
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // 파일 인풋 초기화
+      }
+    } else {
+      setImagePreview(selectedProduct?.imageUrl || null); // 삭제 해제 시 기존 이미지로 복원
+    }
+  };
 
   // 상품 등록
   const handleNewClick = () => {
@@ -497,36 +553,8 @@ export default function ProductsPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      setIsRemoveImage(false); // 새 파일 선택 시 이미지 삭제 스위치 비활성화
-    } else {
-      setImagePreview(selectedProduct?.imageUrl || null); // 파일 선택 취소 시 기존 이미지로 돌아감
-    }
-  };
-
-  const handleRemoveImageToggle = (checked: boolean) => {
-    setIsRemoveImage(checked);
-    if (checked) {
-      setImagePreview(null); // 삭제 선택 시 미리보기 제거
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""; // 파일 인풋 초기화
-      }
-    } else {
-      setImagePreview(selectedProduct?.imageUrl || null); // 삭제 해제 시 기존 이미지로 복원
-    }
-  };
-
-  // 삭제 폼의 Ref를 생성합니다.
-  const deleteFormRef = useRef<HTMLFormElement>(null);
-
   // 상품 삭제
+  const deleteFormRef = useRef<HTMLFormElement>(null);
   const [oneToDelete, setOneToDelete] = useState<Product | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const handleDeleteClick = (menu: Product) => {
@@ -721,13 +749,10 @@ export default function ProductsPage() {
                 )}
               </div>
               <div className="grid grid-cols-4 items-start gap-4">
-                {/* `items-center` 대신 `items-start` */}
                 <Label htmlFor="image" className="text-right pt-2">
                   이미지
                 </Label>
-                {/* `pt-2` 추가하여 레이블 정렬 */}
                 <div className="col-span-3 space-y-2">
-                  {/* 이미지 관련 컨트롤들을 묶는 div */}
                   <Input
                     id="image"
                     name="image"
@@ -743,7 +768,6 @@ export default function ProductsPage() {
                   )}
                   {imagePreview && (
                     <div className="w-full h-32 overflow-hidden flex items-center justify-center border rounded-md bg-gray-50">
-                      {/* ✅ 고정된 높이와 중앙 정렬 */}
                       <img
                         src={imagePreview}
                         alt="Image Preview"
@@ -804,9 +828,9 @@ export default function ProductsPage() {
                   id="name"
                   name="name"
                   placeholder="상품 명"
-                  defaultValue={selectedProduct?.name || ""}
                   className="col-span-3"
                   autoComplete="off"
+                  defaultValue={selectedProduct?.name || ""}
                 />
                 {/* ✅ 이름 필드에 대한 에러 메시지 표시 */}
                 {actionData?.errors?.name && (
@@ -823,9 +847,9 @@ export default function ProductsPage() {
                   id="description"
                   name="description"
                   placeholder="상품 설명"
-                  defaultValue={selectedProduct?.description || ""}
                   className="col-span-3"
                   autoComplete="off"
+                  defaultValue={selectedProduct?.description || ""}
                 />
                 {/* ✅ 설명 필드에 대한 에러 메시지 표시 (필요 시) */}
                 {actionData?.errors?.description && (
@@ -835,11 +859,9 @@ export default function ProductsPage() {
                 )}
               </div>
               <div className="grid grid-cols-4 items-start gap-4">
-                {/* `items-center` 대신 `items-start` */}
                 <Label htmlFor="image" className="text-right pt-2">
                   이미지
                 </Label>
-                {/* `pt-2` 추가하여 레이블 정렬 */}
                 <div className="col-span-3 space-y-2">
                   {/* 이미지 관련 컨트롤들을 묶는 div */}
                   <Input
@@ -858,7 +880,6 @@ export default function ProductsPage() {
                   )}
                   {/* ✅ 이미지 미리보기 영역 */}
                   <div className="w-full h-32 overflow-hidden flex items-center justify-center border rounded-md bg-gray-50">
-                    {/* ✅ 고정된 높이와 중앙 정렬 */}
                     {imagePreview ? (
                       <img
                         src={imagePreview}
@@ -872,7 +893,6 @@ export default function ProductsPage() {
                   {/* ✅ 이미지 삭제 스위치 */}
                   <div className="flex items-center justify-between gap-2 pt-2">
                     <div className="flex items-center gap-2">
-                      {/* ✅ Switch와 Label 텍스트를 함께 묶기 */}
                       <Switch
                         id="removeImage"
                         name="removeImage"

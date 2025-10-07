@@ -32,6 +32,21 @@ export const meta: Route.MetaFunction = () => [
   { name: "description", content: "show all the recipe cards" },
 ];
 
+// 상품 타입 정의
+type Product = {
+  id: number;
+  name: string;
+};
+
+// 레시피 타입 정의
+type Recipe = {
+  id: number;
+  name: string;
+  description: string;
+  ingredients: [{ name: string; quantity: string }];
+  [key: string]: any;
+};
+
 export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
   if (!session) throw new Response("Unauthorized", { status: 401 });
@@ -61,6 +76,7 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
       menus (
         description,
         image_url,
+        image_thumb_url,
         products (
           name
         )
@@ -86,27 +102,12 @@ export const loader: LoaderFunction = async ({ request }: Route.LoaderArgs) => {
         quantity: i.quantity,
       })),
       productName: item.menus.products.name,
-      imageUrl: item.menus.image_url,
+      imageUrl: item.menus.image_thumb_url,
       updatedAt: item.updated_at,
     }));
     console.log("recipes.R", recipes);
     return [comboProducts, recipes];
   } else return [];
-};
-
-// 상품 타입 정의
-type Product = {
-  id: number;
-  name: string;
-};
-
-// 레시피 타입 정의
-type Recipe = {
-  id: number;
-  name: string;
-  description: string;
-  ingredients: [{ name: string; quantity: string }];
-  [key: string]: any;
 };
 
 export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
@@ -116,11 +117,11 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
 
   // 상품 목록 조회
   const [products] = useState<Product[]>(loaderData[0]);
-  console.log("recipes.loaderData[0]", loaderData);
+  console.log("recipes.loaderData[0]", products);
 
   // 레시피 목록 조회
   const [recipes] = useState<Recipe[]>(loaderData[1]);
-  console.log("recipes.loaderData[1]", loaderData);
+  console.log("recipes.loaderData[1]", recipes);
 
   // 레시피 삭제
   const [oneToDelete, setOneToDelete] = useState<Recipe | null>(null);
@@ -150,6 +151,7 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-row gap-4">
           <h1 className="text-3xl font-bold text-amber-800">레시피</h1>
+          {/* 상품 선택 콤보 */}
           <Select value={selectedProduct} onValueChange={setSelectedProduct}>
             <SelectTrigger className="w-[180px] bg-white">
               <SelectValue placeholder="카테고리 선택" />
