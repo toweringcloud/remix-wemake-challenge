@@ -64,7 +64,7 @@ export function MenuCard({
           <div className="flex flex-col w-[70%]">
             <CardHeader>
               <Link to={`/dashboard/recipes/${id}`}>
-                <CardTitle className="text-xl font-bold text-amber-800 hover:underline flex flex-row gap-1">
+                <CardTitle className="text-lg font-bold text-amber-800 hover:underline flex flex-row gap-1">
                   {name}{" "}
                   {category !== "디저트" ? (
                     isHot === undefined ? null : isHot === true ? (

@@ -42,6 +42,7 @@ import { ProductCard } from "~/components/product-card";
 import { getCookieSession } from "~/lib/cookie.server";
 import { createThumbnail } from "~/lib/image.server";
 import { createClient } from "~/lib/supabase.server";
+import { cn } from "~/lib/utils";
 import { useRoleStore } from "~/stores/user.store";
 
 export const meta: Route.MetaFunction = () => [
@@ -146,8 +147,25 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
       const imageFile = formData.get("image") as File;
 
       if (imageFile && imageFile.size > 0) {
+        // ✅ 파일 확장자를 소문자로 변환합니다.
+        const originalName = imageFile.name;
+        const extension = originalName.split(".").pop()?.toLowerCase();
+        const baseName = originalName.split(".").slice(0, -1).join(".");
+        console.log("products.C.imageFile", imageFile);
+
+        // ✅ 확장자가 없는 파일이거나 유효하지 않은 경우를 대비
+        if (!extension || !["jpg", "jpeg", "png", "webp"].includes(extension)) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              errors: { image: ["지원하지 않는 파일 형식입니다."] },
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
         // 1. 원본 이미지 업로드
-        const originalFilePath = `${storageDivision}/${uuidv4()}-original-${imageFile.name}`;
+        const originalFilePath = `${storageDivision}/${uuidv4()}-original.${extension}`;
         const { error: originalUploadError } = await storageInstance.upload(
           originalFilePath,
           imageFile,
@@ -176,7 +194,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         try {
           const { buffer: thumbBuffer, mimeType: thumbMimeType } =
             await createThumbnail(imageFile);
-          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb-${imageFile.name.split(".").slice(0, -1).join(".")}.webp`; // 썸네일은 webp로 고정
+          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb.webp`;
 
           const { error: thumbUploadError } = await storageInstance.upload(
             thumbFilePath,
@@ -282,8 +300,25 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
           await storageInstance.remove(filesToDelete); // 일괄 삭제
         }
 
+        // ✅ 파일 확장자를 소문자로 변환합니다.
+        const originalName = imageFile.name;
+        const extension = originalName.split(".").pop()?.toLowerCase();
+        const baseName = originalName.split(".").slice(0, -1).join(".");
+        console.log("products.U.imageFile", imageFile);
+
+        // ✅ 확장자가 없는 파일이거나 유효하지 않은 경우를 대비
+        if (!extension || !["jpg", "jpeg", "png", "webp"].includes(extension)) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              errors: { image: ["지원하지 않는 파일 형식입니다."] },
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
         // 1. 새 원본 이미지 업로드
-        const originalFilePath = `${storageDivision}/${uuidv4()}-original-${imageFile.name}`;
+        const originalFilePath = `${storageDivision}/${uuidv4()}-original.${extension}`;
         const { error: originalUploadError } = await storageInstance.upload(
           originalFilePath,
           imageFile,
@@ -309,7 +344,7 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
         try {
           const { buffer: thumbBuffer, mimeType: thumbMimeType } =
             await createThumbnail(imageFile);
-          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb-${imageFile.name.split(".").slice(0, -1).join(".")}.webp`; // 썸네일은 webp로 고정
+          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb.webp`;
 
           const { error: thumbUploadError } = await storageInstance.upload(
             thumbFilePath,
@@ -754,12 +789,15 @@ export default function ProductsPage() {
                 </Label>
                 <div className="col-span-3 space-y-2">
                   <Input
+                    type="file"
                     id="image"
                     name="image"
-                    type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    className="w-full"
+                    className={cn(
+                      "block w-full border-0 p-0 file:bg-green-600 file:text-white file:px-4 file:rounded-md file:border-0 hover:file:bg-green-700 file:cursor-pointer",
+                      imagePreview ? "text-slate-500" : "text-transparent"
+                    )}
                   />
                   {actionData?.errors?.image && (
                     <p className="text-sm text-red-500">
@@ -865,13 +903,16 @@ export default function ProductsPage() {
                 <div className="col-span-3 space-y-2">
                   {/* 이미지 관련 컨트롤들을 묶는 div */}
                   <Input
+                    type="file"
                     id="image"
                     name="image"
-                    type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     disabled={isRemoveImage}
-                    className="w-full"
+                    className={cn(
+                      "block w-full border-0 p-0 file:bg-green-600 file:text-white file:px-4 file:rounded-md file:border-0 hover:file:bg-green-700 file:cursor-pointer",
+                      imagePreview ? "text-slate-500" : "text-transparent"
+                    )}
                   />
                   {actionData?.errors?.image && (
                     <p className="text-sm text-red-500">
@@ -947,7 +988,7 @@ export default function ProductsPage() {
             <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
               "{oneToDelete?.name}" 상품 내에 등록된 메뉴가 없을 경우에만 삭제
-              가능합니다. 이 작업은 되돌릴 수 없습니다.
+              가능합니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

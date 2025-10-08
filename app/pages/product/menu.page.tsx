@@ -1,4 +1,4 @@
-import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
+import { Loader, Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Form,
@@ -47,14 +47,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
 
 import type { Route } from "./+types/menu.page";
 import { MenuCard } from "~/components/menu-card";
 import { getCookieSession } from "~/lib/cookie.server";
 import { createThumbnail } from "~/lib/image.server";
 import { createClient } from "~/lib/supabase.server";
+import { cn } from "~/lib/utils";
 import { useRoleStore } from "~/stores/user.store";
-import { Switch } from "~/components/ui/switch";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Menus | Caferium" },
@@ -248,8 +249,25 @@ export const action: ActionFunction = async ({
       const imageFile = formData.get("image") as File;
 
       if (imageFile && imageFile.size > 0) {
+        // ✅ 파일 확장자를 소문자로 변환합니다.
+        const originalName = imageFile.name;
+        const extension = originalName.split(".").pop()?.toLowerCase();
+        const baseName = originalName.split(".").slice(0, -1).join(".");
+        console.log("menus.C.imageFile", imageFile);
+
+        // ✅ 확장자가 없는 파일이거나 유효하지 않은 경우를 대비
+        if (!extension || !["jpg", "jpeg", "png", "webp"].includes(extension)) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              errors: { image: ["지원하지 않는 파일 형식입니다."] },
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
         // 1. 원본 이미지 업로드
-        const originalFilePath = `${storageDivision}/${uuidv4()}-original-${imageFile.name}`;
+        const originalFilePath = `${storageDivision}/${uuidv4()}-original.${extension}`;
         const { error: originalUploadError } = await storageInstance.upload(
           originalFilePath,
           imageFile,
@@ -278,7 +296,7 @@ export const action: ActionFunction = async ({
         try {
           const { buffer: thumbBuffer, mimeType: thumbMimeType } =
             await createThumbnail(imageFile);
-          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb-${imageFile.name.split(".").slice(0, -1).join(".")}.webp`; // 썸네일은 webp로 고정
+          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb.webp`;
 
           const { error: thumbUploadError } = await storageInstance.upload(
             thumbFilePath,
@@ -302,17 +320,23 @@ export const action: ActionFunction = async ({
         }
       }
 
-      const { error } = await supabase.from("menus").insert({
-        name,
-        description,
-        is_hot: isHotBoolean,
-        price,
-        image_url: imageUrl,
-        image_thumb_url: imageThumbUrl,
-        product_id: selectedProductId,
-        cafe_id: cafeId,
-      });
+      // 1. 메뉴 등록 후에 방금 생성한 메뉴 데이터를 가져옵니다.
+      const { data: newMenu, error } = await supabase
+        .from("menus")
+        .insert({
+          name,
+          description,
+          is_hot: isHotBoolean,
+          price,
+          image_url: imageUrl,
+          image_thumb_url: imageThumbUrl,
+          product_id: selectedProductId,
+          cafe_id: cafeId,
+        })
+        .select()
+        .single();
 
+      // 메뉴 등록 중 에러 처리
       if (error) {
         return new Response(
           JSON.stringify({ ok: false, error: error.message }),
@@ -322,7 +346,33 @@ export const action: ActionFunction = async ({
           }
         );
       }
-      console.log(`menus.C: cafe(${cafeId})`);
+
+      // 2. 성공적으로 생성된 메뉴의 정보를 사용하여 레시피를 등록합니다.
+      const { error: recipeError } = await supabase.from("recipes").insert({
+        name: newMenu.name, // 메뉴 이름과 동일하게 설정
+        steps: [], // 자바스크립트의 빈 배열은 Supabase가 '{}'::text[]로 처리합니다.
+        menu_id: newMenu.id, // 위에서 반환받은 새 메뉴의 ID
+        cafe_id: newMenu.cafe_id,
+      });
+
+      // 레시피 등록 중 에러 처리
+      if (recipeError) {
+        // 참고: 여기서는 메뉴는 생성되었지만 레시피 생성은 실패한 상태입니다.
+        // 필요하다면 이미 생성된 메뉴를 삭제하는 등의 추가적인 예외 처리를 할 수 있습니다.
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: `레시피 생성 실패: ${recipeError.message}`,
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // 모든 과정이 성공했을 때의 응답
+      console.log(`menus.C: cafe(${cafeId}), menu(${newMenu.id})`);
       return new Response(JSON.stringify({ ok: true, action: actionType }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -409,8 +459,26 @@ export const action: ActionFunction = async ({
           await storageInstance.remove(filesToDelete); // 일괄 삭제
         }
 
+        // ✅ 파일 확장자를 소문자로 변환합니다.
+        const originalName = imageFile.name;
+        const extension = originalName.split(".").pop()?.toLowerCase();
+        const baseName = originalName.split(".").slice(0, -1).join(".");
+        console.log("menus.U.imageFile", imageFile);
+
+        // ✅ 확장자가 없는 파일이거나 유효하지 않은 경우를 대비
+        if (!extension || !["jpg", "jpeg", "png", "webp"].includes(extension)) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              errors: { image: ["지원하지 않는 파일 형식입니다."] },
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
         // 1. 새 원본 이미지 업로드
-        const originalFilePath = `${storageDivision}/${uuidv4()}-original-${imageFile.name}`;
+        const originalFilePath = `${storageDivision}/${uuidv4()}-original.${extension}`;
+        console.log("menus.C.imageFile.c1", originalFilePath);
         const { error: originalUploadError } = await storageInstance.upload(
           originalFilePath,
           imageFile,
@@ -436,8 +504,8 @@ export const action: ActionFunction = async ({
         try {
           const { buffer: thumbBuffer, mimeType: thumbMimeType } =
             await createThumbnail(imageFile);
-          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb-${imageFile.name.split(".").slice(0, -1).join(".")}.webp`; // 썸네일은 webp로 고정
-
+          const thumbFilePath = `${storageDivision}/${uuidv4()}-thumb.webp`;
+          console.log("menus.C.imageFile.c2", thumbFilePath);
           const { error: thumbUploadError } = await storageInstance.upload(
             thumbFilePath,
             thumbBuffer,
@@ -530,7 +598,7 @@ export const action: ActionFunction = async ({
 
       const { data: oneToDelete, error: selectError } = await supabase
         .from("menus")
-        .select("image_url, image_thumb_url, recipes(menu_id)") // 연결된 레시피가 있는지 확인
+        .select("image_url, image_thumb_url") // 연결된 레시피가 있는지 확인
         .eq("id", menuId)
         .single();
 
@@ -544,19 +612,7 @@ export const action: ActionFunction = async ({
         );
       }
 
-      // ✅ 관련 레시피가 있으면 삭제 거부
-      if (oneToDelete.recipes && oneToDelete.recipes.length > 0) {
-        return new Response(
-          JSON.stringify({
-            ok: false,
-            error: "이 메뉴에 연결된 레시피가 있어 삭제할 수 없습니다.",
-          }),
-          {
-            status: 409,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
+      // ✅ 매출이 발생한 이력이 있을 경우, 해당 메뉴와 레시피 삭제 불가 (TBD)
 
       if (oneToDelete.image_url) {
         // ✅ 원본 이미지 경로
@@ -612,45 +668,14 @@ export const action: ActionFunction = async ({
 };
 
 export default function MenusPage() {
+  // 모든 훅을 컴포넌트 최상단에 조건 없이 호출합니다.
   const { roleCode, isLoading } = useRoleStore();
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
   const navigation = useNavigation();
 
+  // 메뉴 목록 로더 데이터
   const loaderData = useLoaderData() as [Product[], Menu[], string];
-  if (!loaderData || !productId) return;
-
-  // 상품 목록 조회
-  const products = loaderData[0];
-  const theProduct = products.filter(
-    (product) => product.id === parseInt(productId)
-  );
-
-  // 메뉴 목록 조회
-  const menus = loaderData[1];
-  // console.log("menus.loaderData[1]", menus);
-
-  // 로더에서 반환된 현재 URL의 productId (문자열)
-  const currentProductIdFromLoader = loaderData[2];
-
-  // 메뉴 선택 콤보
-  const [selectedProductId, setSelectedProductId] = useState(
-    currentProductIdFromLoader || productId
-  );
-  const handleMainSelectChange = (value: string) => {
-    setSelectedProductId(value); // UI 상태 업데이트
-    navigate(`/dashboard/products/${value}/menus`); // URL 경로 변경
-  };
-
-  const [selectedProduct, setSelectedProduct] = useState(() => {
-    return theProduct[0].name || "전체";
-  });
-  const filteredMenus =
-    selectedProductId === "0"
-      ? menus
-      : menus.filter(
-          (menu: Menu) => menu.productId === parseInt(selectedProductId)
-        );
 
   // 메뉴 등록/수정/삭제 결과 조회
   const actionData = useActionData() as {
@@ -666,12 +691,38 @@ export default function MenusPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isRemoveImage, setIsRemoveImage] = useState(false);
   const [editProductSelection, setEditProductSelection] = useState<string>("");
+  const [oneToDelete, setOneToDelete] = useState<Menu | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const deleteFormRef = useRef<HTMLFormElement>(null);
 
   // 폼 제출이 완료되었는지 확인
   const isSubmitting = navigation.state === "submitting";
 
-  // 파일 입력 Ref
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // 상품 + 메뉴 목록 조회
+  // loaderData에서 필요한 값을 꺼내기 전에 null/undefined 체크를 합니다.
+  // 이 부분은 훅이 아니므로 조건문 안에서 처리해도 안전합니다.
+  const products = loaderData?.[0];
+  const menus = loaderData?.[1];
+  const currentProductIdFromLoader = loaderData?.[2];
+
+  // 메뉴 선택 콤보
+  const [selectedProductId, setSelectedProductId] = useState(
+    currentProductIdFromLoader || productId
+  );
+  const handleMainSelectChange = (value: string) => {
+    setSelectedProductId(value); // UI 상태 업데이트
+    navigate(`/dashboard/products/${value}/menus`); // URL 경로 변경
+  };
+
+  // 선택된 상품에 해당하는 메뉴만 필터링
+  const filteredMenus =
+    selectedProductId === "0"
+      ? menus
+      : menus.filter(
+          (menu: Menu) => menu.productId === parseInt(selectedProductId!)
+        );
 
   // 이미지 파일 선택 핸들러
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -718,9 +769,6 @@ export default function MenusPage() {
   };
 
   // 메뉴 삭제
-  const deleteFormRef = useRef<HTMLFormElement>(null);
-  const [oneToDelete, setOneToDelete] = useState<Menu | null>(null);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const handleDeleteClick = (menu: Menu) => {
     setOneToDelete(menu);
     setIsAlertOpen(true);
@@ -790,12 +838,6 @@ export default function MenusPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      // loader가 자동으로 재실행되므로, navigate(".", { replace: true });는 불필요
-      // 그러나 현재 페이지의 params가 변경되지 않는 경우 Remix는 자동으로 리로드하지 않을 수 있습니다.
-      // 이 경우 `navigate(".", { replace: true })`를 호출하여 강제로 loader를 재실행시킬 수 있습니다.
-      // 하지만 이 경우 URL도 함께 변경될 수 있으니 주의.
-      // 현재는 `useLoaderData`를 직접 사용하므로 `loaderData` 자체가 갱신됩니다.
-      // 따라서 `navigate`는 더 이상 필요 없습니다.
     }
   }, [actionData]);
 
@@ -804,11 +846,17 @@ export default function MenusPage() {
     if (isLoading || roleCode === null) {
       return;
     }
-    if (roleCode !== "SA" && roleCode !== "MA") {
+    if (!["SA", "MA"].includes(roleCode)) {
       toast.error("접근 권한이 없습니다.");
       navigate("/dashboard");
     }
   }, [roleCode, isLoading, navigate]);
+
+  // ✅ 모든 훅이 호출된 후에, 데이터 로딩 상태에 따른 조기 리턴(early return)을 실행합니다.
+  // 로딩 중이거나 필수 데이터가 없으면 로딩 스피너나 null을 반환하는 것이 좋습니다.
+  if (!loaderData || !productId || !roleCode || !products || !menus) {
+    return <Loader />;
+  }
 
   return (
     <div className="p-6">
@@ -833,7 +881,7 @@ export default function MenusPage() {
           </Select>
         </div>
 
-        {roleCode === "MA" && (
+        {["SA", "MA"].includes(roleCode) && (
           <button
             className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
             onClick={() => handleNewClick()}
@@ -855,7 +903,7 @@ export default function MenusPage() {
             status={menu.status}
             category={menu.category}
             action={
-              ["SA", "MA"].includes(roleCode!) && (
+              ["SA", "MA"].includes(roleCode) && (
                 <div className="flex items-center gap-2 ml-auto -mb-2">
                   <button
                     onClick={() => handleEditClick(menu)}
@@ -894,7 +942,6 @@ export default function MenusPage() {
           >
             <div className="grid gap-4 pt-2 pb-8">
               <input type="hidden" name="actionType" value="C" />
-              {/* <input type="hidden" name="productId" value={selectedProductId} /> */}
 
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="productId" className="text-right">
@@ -902,11 +949,11 @@ export default function MenusPage() {
                 </Label>
                 <Select
                   name="productId"
-                  defaultValue={selectedProductId || ""}
+                  defaultValue={selectedProductId}
                   onValueChange={setEditProductSelection}
                 >
                   <SelectTrigger className="w-[120px] col-span-3 bg-white">
-                    <SelectValue placeholder="상품 카테고리 선택" />
+                    <SelectValue placeholder="카테고리 선택" />
                   </SelectTrigger>
                   <SelectContent className="bg-white shadow-md border border-stone-200">
                     {products
@@ -997,9 +1044,9 @@ export default function MenusPage() {
                   가격
                 </Label>
                 <Input
+                  type="number"
                   id="price"
                   name="price"
-                  type="number"
                   placeholder="원 단위"
                   className="col-span-3"
                   autoComplete="off"
@@ -1017,12 +1064,17 @@ export default function MenusPage() {
                 </Label>
                 <div className="col-span-3 space-y-2">
                   <Input
+                    type="file"
                     id="image"
                     name="image"
-                    type="file"
+                    placeholder="메뉴 이미지"
+                    accept="image/png, image/jpg, image/jpeg"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    className="w-full"
+                    className={cn(
+                      "block w-full border-0 p-0 file:bg-green-600 file:text-white file:px-4 file:rounded-md file:border-0 hover:file:bg-green-700 file:cursor-pointer",
+                      imagePreview ? "text-slate-500" : "text-transparent"
+                    )}
                   />
                   {actionData?.errors?.image && (
                     <p className="text-sm text-red-500">
@@ -1115,7 +1167,7 @@ export default function MenusPage() {
                   onValueChange={setEditProductSelection}
                 >
                   <SelectTrigger className="w-[120px] col-span-3 bg-white">
-                    <SelectValue placeholder="상품 카테고리 선택" />
+                    <SelectValue placeholder="카테고리 선택" />
                   </SelectTrigger>
                   <SelectContent className="bg-white shadow-md border border-stone-200">
                     {products
@@ -1214,9 +1266,9 @@ export default function MenusPage() {
                   가격
                 </Label>
                 <Input
+                  type="number"
                   id="price"
                   name="price"
-                  type="number"
                   placeholder="원 단위"
                   className="col-span-3"
                   autoComplete="off"
@@ -1235,13 +1287,16 @@ export default function MenusPage() {
                 <div className="col-span-3 space-y-2">
                   {/* 이미지 관련 컨트롤들을 묶는 div */}
                   <Input
+                    type="file"
                     id="image"
                     name="image"
-                    type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     disabled={isRemoveImage}
-                    className="w-full"
+                    className={cn(
+                      "block w-full border-0 p-0 file:bg-green-600 file:text-white file:px-4 file:rounded-md file:border-0 hover:file:bg-green-700 file:cursor-pointer",
+                      imagePreview ? "text-slate-500" : "text-transparent"
+                    )}
                   />
                   {actionData?.errors?.image && (
                     <p className="text-sm text-red-500">
@@ -1291,7 +1346,7 @@ export default function MenusPage() {
                 type="button"
                 variant="outline"
                 className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
-                onClick={() => setIsNewDialogOpen(false)}
+                onClick={() => setIsEditDialogOpen(false)}
               >
                 <XCircle className="h-4 w-4" />
                 취소
@@ -1315,8 +1370,7 @@ export default function MenusPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{oneToDelete?.name}" 메뉴 내에 등록된 레시피가 없을 경우에만 삭제
-              가능합니다. 이 작업은 되돌릴 수 없습니다.
+              "{oneToDelete?.name}" 메뉴 내에 등록된 레시피도 함께 삭제합니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

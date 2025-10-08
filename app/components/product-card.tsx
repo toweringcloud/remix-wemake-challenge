@@ -57,7 +57,7 @@ export function ProductCard({
           <div className="flex flex-col w-[70%]">
             <CardHeader>
               <Link to={`/dashboard/products/${id}/menus`}>
-                <CardTitle className="text-xl font-bold text-amber-800 hover:underline">
+                <CardTitle className="text-lg font-bold text-amber-800 hover:underline">
                   {name}
                 </CardTitle>
               </Link>

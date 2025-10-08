@@ -1,18 +1,7 @@
 import { useState } from "react";
 import { Link, redirect, type LoaderFunction } from "react-router-dom";
-import { Pencil, Plus, Trash2, XCircle } from "lucide-react";
+import { Pencil } from "lucide-react";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "~/components/ui/alert-dialog";
-import { Button } from "~/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -123,20 +112,6 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
   const [recipes] = useState<Recipe[]>(loaderData[1]);
   console.log("recipes.loaderData[1]", recipes);
 
-  // 레시피 삭제
-  const [oneToDelete, setOneToDelete] = useState<Recipe | null>(null);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const handleDeleteClick = (menu: Recipe) => {
-    setOneToDelete(menu);
-    setIsAlertOpen(true);
-  };
-  const confirmDelete = () => {
-    if (!oneToDelete) return;
-    console.log(`삭제 또는 비활성화 대상 : '${oneToDelete.name}'`);
-    setIsAlertOpen(false);
-    setOneToDelete(null);
-  };
-
   // 레시피 선택 콤보
   const [selectedProduct, setSelectedProduct] = useState("전체");
   const filteredRecipes =
@@ -165,15 +140,6 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
             </SelectContent>
           </Select>
         </div>
-
-        {/* 레시피는 메뉴 등록 시에 자동으로 생성되며, 수정 및 삭제만 가능합니다. */}
-        {/* {roleCode === "MA" && (
-          <Link to="/dashboard/recipes/new">
-            <button className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center">
-              <Plus className="h-4 w-4" /> 등록
-            </button>
-          </Link>
-        )} */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -187,22 +153,14 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
             imageUrl={recipe.imageUrl}
             action={
               roleCode === "MA" ? (
-                // 매니저일 경우: 수정/삭제 버튼
+                // 매니저일 경우: 수정 버튼
                 <div className="flex items-center gap-2 ml-auto -mb-2">
-                  <Link
-                    to={`/dashboard/recipes/${recipe.id}/edit`}
-                    className="flex items-center gap-1 text-sm text-stone-600 hover:text-black p-2 rounded-md hover:bg-stone-200 transition-colors"
-                  >
-                    <Pencil size={14} />
-                    수정
+                  <Link to={`/dashboard/recipes/${recipe.id}/edit`}>
+                    <button className="cursor-pointer flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors">
+                      <Pencil className="h-4 w-4" />
+                      수정
+                    </button>
                   </Link>
-                  <button
-                    onClick={() => handleDeleteClick(recipe)}
-                    className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                    삭제
-                  </button>
                 </div>
               ) : (
                 // 스태프일 경우: 상세보기 링크
@@ -219,41 +177,6 @@ export default function RecipeListPage({ loaderData }: Route.ComponentProps) {
           />
         ))}
       </div>
-
-      {/* ✅ 레시피 삭제 팝업 */}
-      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
-            <AlertDialogDescription>
-              "{oneToDelete?.name}" 레시피가 삭제되며, 메뉴 수정에서 레시피 생성
-              액션을 통해 다시 추가할 수 있습니다. 이 작업은 되돌릴 수 없습니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel asChild>
-              <Button
-                variant="outline"
-                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
-                onClick={() => setOneToDelete(null)}
-              >
-                <XCircle className="h-4 w-4 group-hover:text-red-600 transition-colors" />
-                취소
-              </Button>
-            </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button
-                variant="destructive"
-                className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
-                onClick={confirmDelete}
-              >
-                <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
-                삭제 확인
-              </Button>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

@@ -1,8 +1,10 @@
+import { ChevronLeft, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Link,
   redirect,
   useLoaderData,
+  useNavigate,
   type LoaderFunction,
   type LoaderFunctionArgs,
 } from "react-router-dom";
@@ -86,6 +88,7 @@ type Recipe = {
 
 export default function RecipeDetailPage() {
   const { roleCode } = useRoleStore();
+  const navigate = useNavigate();
 
   // const { recipe } = useLoaderData<typeof loader>();
   const { recipe } = useLoaderData<Recipe>();
@@ -123,14 +126,19 @@ export default function RecipeDetailPage() {
         <h1 className="text-3xl font-bold">{recipe.name}</h1>
         <div className="flex space-x-3">
           <Link to="/dashboard/recipes">
-            <button className="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600">
-              목록
+            <button
+              onClick={() => navigate(-1)}
+              className="bg-gray-500 text-white font-bold py-2 px-2 rounded-lg hover:bg-gray-600"
+            >
+              <ChevronLeft className="h-6 w-6" />
+              {""}
             </button>
           </Link>
           {/* 매니저일 경우에만 '수정하기' 버튼이 보입니다. */}
           {roleCode === "MA" && (
             <Link to={`/dashboard/recipes/${recipe.id}/edit`}>
-              <button className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700">
+              <button className="flex flex-row gap-2 bg-green-600 text-white font-bold py-2 px-2 rounded-lg hover:bg-green-700">
+                <Pencil className="h-6 w-6" />
                 수정
               </button>
             </Link>
