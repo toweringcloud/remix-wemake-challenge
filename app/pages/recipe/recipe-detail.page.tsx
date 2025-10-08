@@ -42,7 +42,7 @@ export const loader: LoaderFunction = async ({
     .select(
       `
       *,
-      menus(id, image_url, image_thumb_url),
+      menus(id, description, image_url, image_thumb_url),
       recipe_ingredients (
         quantity,
         ingredients (
@@ -122,8 +122,10 @@ export default function RecipeDetailPage() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">{recipe.name}</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold mb-6 text-amber-800">
+          {recipe.name}
+        </h1>
         <div className="flex space-x-3">
           <Link to="/dashboard/recipes">
             <button

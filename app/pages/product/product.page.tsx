@@ -1,4 +1,4 @@
-import { Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
+import { Loader, Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Form,
@@ -514,16 +514,14 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
   }
 };
 
-// export default function ProductsPage({ loaderData }: Route.ComponentProps) {
 export default function ProductsPage() {
   const { roleCode, isLoading } = useRoleStore();
   const navigate = useNavigate();
   const navigation = useNavigation(); // ✅ 폼 제출 상태를 추적
 
   // 상품 목록 조회
-  // const [products] = useState<Product[]>(loaderData);
-  const products = useLoaderData() as Product[];
-  // console.log("products.loaderData", products);
+  const loaderData = useLoaderData() as Product[];
+  const products = loaderData;
 
   // 상품 등록/수정/삭제 결과 조회
   const actionData = useActionData() as {
@@ -538,12 +536,14 @@ export default function ProductsPage() {
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isRemoveImage, setIsRemoveImage] = useState(false);
+  const [oneToDelete, setOneToDelete] = useState<Product | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const deleteFormRef = useRef<HTMLFormElement>(null);
 
   // 폼 제출이 완료되었는지 확인
   const isSubmitting = navigation.state === "submitting";
-
-  // 파일 입력 Ref
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 이미지 파일 선택 핸들러
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -589,9 +589,6 @@ export default function ProductsPage() {
   };
 
   // 상품 삭제
-  const deleteFormRef = useRef<HTMLFormElement>(null);
-  const [oneToDelete, setOneToDelete] = useState<Product | null>(null);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const handleDeleteClick = (menu: Product) => {
     setOneToDelete(menu);
     setIsAlertOpen(true);
@@ -673,18 +670,24 @@ export default function ProductsPage() {
     if (isLoading || roleCode === null) {
       return;
     }
-    if (roleCode !== "SA" && roleCode !== "MA") {
+    if (!["SA", "MA"].includes(roleCode)) {
       toast.error("접근 권한이 없습니다.");
       navigate("/dashboard");
     }
   }, [roleCode, isLoading, navigate]);
+
+  // ✅ 모든 훅이 호출된 후에, 데이터 로딩 상태에 따른 조기 리턴(early return)을 실행합니다.
+  // 로딩 중이거나 필수 데이터가 없으면 로딩 스피너나 null을 반환하는 것이 좋습니다.
+  if (!loaderData || !roleCode) {
+    return <Loader />;
+  }
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-amber-800">상품</h1>
 
-        {["SA", "MA"].includes(roleCode!) && (
+        {["SA", "MA"].includes(roleCode) && (
           <button
             className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
             onClick={handleNewClick}
@@ -704,7 +707,7 @@ export default function ProductsPage() {
             imageUrl={product.imageUrl}
             imageThumbUrl={product.imageThumbUrl}
             action={
-              ["SA", "MA"].includes(roleCode!) && (
+              ["SA", "MA"].includes(roleCode) && (
                 // 매니저일 경우: 수정/삭제 버튼
                 <div className="flex items-center gap-2 ml-auto -mb-2">
                   <button

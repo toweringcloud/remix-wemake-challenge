@@ -46,7 +46,7 @@ export const loader: LoaderFunction = async ({
     .select(
       `
       *,
-      menus(id, image_url),
+      menus(id, description, image_url),
       recipe_ingredients (
         quantity,
         ingredients (
@@ -66,7 +66,7 @@ export const loader: LoaderFunction = async ({
   const recipe: Recipe = {
     id: data.menus.id,
     name: data.name,
-    description: data.description,
+    description: data.menus.description,
     ingredients: data.recipe_ingredients.map((i: any) => ({
       id: i.ingredients.id,
       name: i.ingredients.name,
@@ -175,8 +175,8 @@ export default function RecipeFormPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">
-        {isEditMode ? "레시피 수정" : "새 레시피 등록"}
+      <h1 className="text-3xl font-bold mb-6 text-amber-800">
+        {isEditMode ? name : "새 레시피 등록"}
       </h1>
 
       <Form
@@ -185,42 +185,20 @@ export default function RecipeFormPage() {
       >
         {/* 레시피 이름, 설명 */}
         <div>
-          <label htmlFor="name" className="block text-lg font-bold mb-2">
-            레시피 이름
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setName(e.target.value)
-            }
-            className="w-full p-2 border rounded"
-            required
-            autoComplete="off"
-          />
-        </div>
-        <div>
           <label htmlFor="description" className="block text-lg font-bold mb-2">
-            간단한 설명
+            메뉴 설명
           </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setDescription(e.target.value)
-            }
-            className="w-full p-2 border rounded"
-            rows={3}
-            autoComplete="off"
-          ></textarea>
+          <span className="text-sm text-gray-800">{description}</span>
         </div>
 
         {/* 재료 관리 */}
         <div>
           <h2 className="text-lg font-bold mb-2">재료</h2>
           {ingredients.map((ing, index) => (
-            <div key={index} className="flex items-center space-x-2 mb-2">
+            <div
+              key={index}
+              className="flex items-center space-x-2 mb-2 text-sm"
+            >
               <input
                 type="text"
                 placeholder="재료명 (예: 우유)"
@@ -264,7 +242,10 @@ export default function RecipeFormPage() {
         <div>
           <h2 className="text-lg font-bold mb-2">만드는 법</h2>
           {steps.map((step, index) => (
-            <div key={index} className="flex items-center space-x-2 mb-2">
+            <div
+              key={index}
+              className="flex items-center space-x-2 mb-2 text-sm"
+            >
               <span className="font-bold">{index + 1}.</span>
               <textarea
                 placeholder="만드는 법 단계 입력"
