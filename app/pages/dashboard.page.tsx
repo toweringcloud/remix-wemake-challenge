@@ -36,30 +36,42 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-6">
-      <h1 className="text-4xl font-bold text-amber-800 mb-4">
-        {`${name}에 오신 걸 환영합니다!`}
-      </h1>
+      <div className="text-3xl font-bold text-amber-800 mb-4">
+        {`${name}'s 대시보드`}
+      </div>
       <p className="text-lg text-stone-600 mb-10">
         조회 또는 관리할 기능을 선택해주세요.
       </p>
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
         {roleCode === "SA" ? (
-          <FeatureCard
-            path="/dashboard/cafe"
-            name={"카페 관리"}
-            description={
-              <p className="text-stone-500">
-                카페의 기본 정보를 조회하고
-                <br /> 수정합니다.
-              </p>
-            }
-            icon={
-              <BookMarked
-                size={48}
-                className="mx-auto mb-4 text-amber-600 group-hover:scale-110 transition-transform"
-              />
-            }
-          />
+          <>
+            <FeatureCard
+              path="/dashboard/cafe"
+              name={"카페 관리"}
+              description={
+                <p className="text-stone-500">카페의 기본 정보를 관리합니다.</p>
+              }
+              icon={
+                <BookMarked
+                  size={48}
+                  className="mx-auto mb-4 text-amber-600 group-hover:scale-110 transition-transform"
+                />
+              }
+            />
+            <FeatureCard
+              path="/dashboard/schedules"
+              name={"근무 관리"}
+              description={
+                <p className="text-stone-500">교대 근무 현황을 관리합니다.</p>
+              }
+              icon={
+                <BookMarked
+                  size={48}
+                  className="mx-auto mb-4 text-amber-600 group-hover:scale-110 transition-transform"
+                />
+              }
+            />
+          </>
         ) : null}
         {roleCode === "SA" || roleCode === "MA" ? (
           <FeatureCard
@@ -67,8 +79,7 @@ export default function DashboardPage() {
             name={"상품 관리"}
             description={
               <p className="text-stone-500">
-                카페의 상품 정보와 상품별 메뉴를
-                <br /> 확인하고 조회합니다.
+                상품 정보와 상품별 메뉴를 관리합니다.
               </p>
             }
             icon={
@@ -84,8 +95,8 @@ export default function DashboardPage() {
           name={roleCode === "BA" ? "레시피" : "레시피 관리"}
           description={
             <p className="text-stone-500">
-              카페 음료와 디저트의 레시피를
-              <br /> 확인하고 조회합니다.
+              음료와 디저트의 레시피를 {roleCode === "BA" ? "확인" : "관리"}
+              합니다.
             </p>
           }
           icon={
@@ -100,8 +111,7 @@ export default function DashboardPage() {
           name={roleCode === "BA" ? "재고" : "재고 관리"}
           description={
             <p className="text-stone-500">
-              카페의 식재료에 대한
-              <br /> 재고를 관리합니다.
+              식재료에 대한 재고를 {roleCode === "BA" ? "확인" : "관리"}합니다.
             </p>
           }
           icon={
@@ -111,6 +121,21 @@ export default function DashboardPage() {
             />
           }
         />
+        {/* {roleCode === "SA" || roleCode === "MA" ? (
+          <FeatureCard
+            path={`/dashboard/sales`}
+            name={"매출 관리"}
+            description={
+              <p className="text-stone-500">메뉴별 판매 현황을 관리합니다.</p>
+            }
+            icon={
+              <Archive
+                size={48}
+                className="mx-auto mb-4 text-amber-600 group-hover:scale-110 transition-transform"
+              />
+            }
+          />
+        ) : null} */}
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import {
   useLoaderData,
   redirect,
 } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Save, Trash2, XCircle } from "lucide-react";
 
 import type { Route } from "./+types/recipe-form.page";
 import { getCookieSession } from "~/lib/cookie.server";
@@ -181,7 +181,7 @@ export default function RecipeFormPage() {
 
       <Form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-lg shadow-md space-y-6"
+        className="bg-white p-6 rounded-lg shadow-md space-y-6"
       >
         {/* 레시피 이름, 설명 */}
         <div>
@@ -193,7 +193,7 @@ export default function RecipeFormPage() {
 
         {/* 재료 관리 */}
         <div>
-          <h2 className="text-lg font-bold mb-2">재료</h2>
+          <h2 className="text-lg font-bold mb-2">필요한 재료</h2>
           {ingredients.map((ing, index) => (
             <div
               key={index}
@@ -223,16 +223,16 @@ export default function RecipeFormPage() {
                 type="button"
                 title="삭제"
                 onClick={() => removeIngredient(index)}
-                className="bg-red-500 text-white px-3 py-2 rounded"
+                className="text-gray-400 hover:text-red-500 hover:bg-red-100 p-2 rounded-full transition-colors"
               >
-                <Trash2 size={20} />
+                <Trash2 size={16} />
               </button>
             </div>
           ))}
           <button
             type="button"
             onClick={addIngredient}
-            className="mt-2 bg-gray-200 text-black py-2 px-4 rounded"
+            className="mt-2 text-sm text-amber-700 bg-amber-100 hover:bg-amber-200 font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
           >
             + 재료 추가
           </button>
@@ -258,16 +258,16 @@ export default function RecipeFormPage() {
                 type="button"
                 title="삭제"
                 onClick={() => removeStep(index)}
-                className="bg-red-500 text-white px-3 py-2 rounded"
+                className="text-gray-400 hover:text-red-500 hover:bg-red-100 p-2 rounded-full transition-colors"
               >
-                <Trash2 size={20} />
+                <Trash2 size={16} />
               </button>
             </div>
           ))}
           <button
             type="button"
             onClick={addStep}
-            className="mt-2 bg-gray-200 text-black py-2 px-4 rounded"
+            className="mt-2 text-sm text-amber-700 bg-amber-100 hover:bg-amber-200 font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
           >
             + 단계 추가
           </button>
@@ -278,14 +278,18 @@ export default function RecipeFormPage() {
           <button
             type="button"
             onClick={() => navigate("/dashboard/recipes")}
-            className="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600"
+            // ✅ 보조 버튼 스타일로 변경
+            className="bg-white text-gray-700 border border-gray-300 font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
           >
+            <XCircle size={18} />
             취소
           </button>
           <button
             type="submit"
-            className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700"
+            // ✅ amber 색상으로 변경
+            className="bg-amber-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2"
           >
+            <Save size={18} />
             {isEditMode ? "수정 완료" : "등록하기"}
           </button>
         </div>

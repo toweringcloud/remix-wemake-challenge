@@ -170,7 +170,7 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
           <DialogHeader>
             <DialogTitle>재고 등록</DialogTitle>
             <DialogDescription>
-              재고 그룹의 이름, 설명, 이미지를 수정합니다.
+              인벤토리의 이름, 설명, 이미지를 등록합니다.
             </DialogDescription>
           </DialogHeader>
           <Form method="post">
@@ -240,7 +240,7 @@ export default function StocksPage({ loaderData }: Route.ComponentProps) {
           <DialogHeader>
             <DialogTitle>"{selectedStock?.name}" 재고 수정</DialogTitle>
             <DialogDescription>
-              재고 그룹의 이름, 설명, 이미지를 수정합니다.
+              인벤토리의 이름, 설명, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
           <Form method="post">

@@ -1141,7 +1141,7 @@ export default function MenusPage() {
           <DialogHeader>
             <DialogTitle>"{selectedMenu?.name}" 메뉴 수정</DialogTitle>
             <DialogDescription>
-              메뉴의 카테고리, 이름, 설명, 가격, 이미지를 수정합니다.
+              메뉴의 이름, 설명, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
           <Form

@@ -62,7 +62,7 @@ export const loader: LoaderFunction = async ({
   const recipe: Recipe = {
     id: data.menus.id,
     name: data.name,
-    description: data.description,
+    description: data.menus.description,
     ingredients: data.recipe_ingredients.map((i: any) => ({
       name: i.ingredients.name,
       amount: i.quantity,
@@ -173,15 +173,14 @@ export default function RecipeDetailPage() {
           <p className="text-lg text-stone-600">{recipe.description}</p>
           {/* 재료 섹션 */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold border-b-2 pb-2 mb-4">
+            <h2 className="text-lg font-bold border-b-2 pb-2 mb-4">
               필요한 재료
             </h2>
             <ul className="list-disc list-inside space-y-2">
               {recipe.ingredients.map(
-                (ing: { name: string; amount: number }, index: number) => (
+                (i: { name: string; amount: number }, index: number) => (
                   <li key={index} className="text-gray-700">
-                    <span className="font-semibold">{ing.name}</span>:{" "}
-                    {ing.amount}
+                    <span className="font-semibold">{i.name}</span>: {i.amount}
                   </li>
                 )
               )}
@@ -190,7 +189,7 @@ export default function RecipeDetailPage() {
 
           {/* 만드는 법 섹션 */}
           <div>
-            <h2 className="text-2xl font-bold border-b-2 pb-2 mb-4">
+            <h2 className="text-lg font-bold border-b-2 pb-2 mb-4">
               만드는 법
             </h2>
             <ol className="list-decimal list-inside space-y-3">
