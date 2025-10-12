@@ -25,13 +25,8 @@ export default [
 
       // 레시피 관리
       route("recipes", "pages/recipe/recipe-list.page.tsx"),
-      route("recipes/new", "pages/recipe/recipe-form.page.tsx", {
-        id: "recipeNew",
-      }),
       route("recipes/:recipeId", "pages/recipe/recipe-detail.page.tsx"),
-      route("recipes/:recipeId/edit", "pages/recipe/recipe-form.page.tsx", {
-        id: "recipeEdit",
-      }),
+      route("recipes/:recipeId/edit", "pages/recipe/recipe-form.page.tsx", {}),
 
       // 재고 관리
       route("stocks", "pages/inventory/stock.page.tsx"),

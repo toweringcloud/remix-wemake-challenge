@@ -139,8 +139,8 @@ export default function RecipeDetailPage() {
           {/* 매니저일 경우에만 '수정하기' 버튼이 보입니다. */}
           {roleCode === "MA" && (
             <Link to={`/dashboard/recipes/${recipe.id}/edit`}>
-              <button className="flex flex-row gap-2 bg-green-600 text-white font-bold py-2 px-2 rounded-lg hover:bg-green-700">
-                <Pencil className="h-6 w-6" />
+              <button className="flex flex-row items-center gap-2 bg-green-600 text-white font-bold py-2 px-2 rounded-lg hover:bg-green-700">
+                <Pencil className="h-5 w-5" />
                 수정
               </button>
             </Link>

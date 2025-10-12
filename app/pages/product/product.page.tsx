@@ -515,9 +515,10 @@ export const action: ActionFunction = async ({ request }: Route.ActionArgs) => {
 };
 
 export default function ProductsPage() {
+  // 모든 훅을 컴포넌트 최상단에 조건 없이 호출합니다.
   const { roleCode, isLoading } = useRoleStore();
-  const navigate = useNavigate();
   const navigation = useNavigation(); // ✅ 폼 제출 상태를 추적
+  const navigate = useNavigate();
 
   // 상품 목록 조회
   const loaderData = useLoaderData() as Product[];
@@ -525,10 +526,11 @@ export default function ProductsPage() {
 
   // 상품 등록/수정/삭제 결과 조회
   const actionData = useActionData() as {
-    action?: "C" | "U" | "D";
-    ok?: boolean;
-    errors?: { name?: string[]; description?: string[]; image?: string[] };
+    action: "C" | "U" | "D";
+    ok: boolean;
+    message?: string;
     error?: string;
+    errors?: { name?: string[]; description?: string[]; image?: string[] };
   };
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);

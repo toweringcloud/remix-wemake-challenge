@@ -1,3 +1,4 @@
+import { ChevronLeft, Loader, Save, Trash2, XCircle } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import {
   useParams,
@@ -7,8 +8,16 @@ import {
   type LoaderFunction,
   useLoaderData,
   redirect,
+  useNavigation,
+  Link,
+  type ActionFunctionArgs,
+  type ActionFunction,
+  useActionData,
 } from "react-router-dom";
-import { Save, Trash2, XCircle } from "lucide-react";
+import { toast } from "sonner";
+import { z } from "zod";
+
+import { Button } from "~/components/ui/button";
 
 import type { Route } from "./+types/recipe-form.page";
 import { getCookieSession } from "~/lib/cookie.server";
@@ -24,21 +33,34 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
+// 레시피 타입 정의
+type Recipe = {
+  id: number;
+  name: string;
+  description: string;
+  ingredients: [{ name: string; quantity: string }];
+  steps: string[];
+  [key: string]: any;
+};
+
+// 재료 타입 정의
+interface Ingredient {
+  id?: number;
+  name: string;
+  amount: string;
+}
+
 export const loader: LoaderFunction = async ({
   request,
   params,
 }: LoaderFunctionArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
-  if (!session) throw new Response("Unauthorized", { status: 401 });
   if (!session?.cafeId) return redirect("/login");
   const cafeId = session.cafeId;
-  console.log("recipe-form.cafeId", cafeId);
 
   const { recipeId } = params;
-  console.log("recipe-form.menuId", recipeId);
-
-  // 레시피 등록
   if (!recipeId) return {};
+  console.log("recipe-form.menuId", cafeId, recipeId);
 
   const { supabase } = createClient(request);
   const { data } = await supabase
@@ -77,34 +99,175 @@ export const loader: LoaderFunction = async ({
     videoUrl: data.video,
     updatedAt: data.updated_at,
   };
-  console.log("recipe-form.R", recipe);
+  // console.log("recipe-form.R", recipe);
   return { recipe };
 };
 
-// 레시피 타입 정의
-type Recipe = {
-  id: number;
-  name: string;
-  description: string;
-  ingredients: [{ name: string; quantity: string }];
-  steps: string[];
-  [key: string]: any;
+export const action: ActionFunction = async ({
+  request,
+  params,
+}: ActionFunctionArgs) => {
+  try {
+    const session = getCookieSession(request.headers.get("Cookie"));
+    if (!session?.cafeId) return redirect("/login");
+    const cafeId = session.cafeId;
+
+    const formData = await request.formData();
+    const actionType = formData.get("actionType");
+    console.log("recipe-form.action", cafeId, actionType);
+
+    if (!actionType || !["C", "U", "D"].includes(actionType.toString())) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Invalid action type" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { recipeId: menuId } = params;
+    if (!menuId) throw new Response("Menu ID not found", { status: 404 });
+    console.log("recipe-form", menuId, Object.fromEntries(formData.entries()));
+
+    // Zod를 사용한 유효성 검사 (선택 사항이지만 권장)
+    const steps = JSON.parse(formData.get("steps") as string) as string[];
+    const ingredients = JSON.parse(
+      formData.get("ingredients") as string
+    ) as Ingredient[];
+
+    const { supabase } = createClient(request);
+
+    // 1. recipes 테이블에서 현재 레시피의 기본 키(id)를 조회합니다.
+    // const { data: recipeData, error: recipeFetchError } = await supabase
+    //   .from("recipes")
+    //   .select("id")
+    //   .eq("menu_id", menuId)
+    //   .eq("cafe_id", cafeId)
+    //   .single();
+
+    // if (recipeFetchError) throw recipeFetchError;
+    // const recipePK = recipeData.id;
+    const recipePK = menuId;
+
+    // 2. 레시피 기본 정보(단계)를 업데이트합니다.
+    const { error: updateRecipeError } = await supabase
+      .from("recipes")
+      .update({ steps })
+      .eq("menu_id", recipePK);
+
+    if (updateRecipeError) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: updateRecipeError.message || "레시피 단계 정보 업데이트 실패",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 3. 기존 재료 정보를 모두 삭제합니다.
+    const { error: deleteLinkError } = await supabase
+      .from("recipe_ingredients")
+      .delete()
+      .eq("recipe_id", recipePK);
+
+    if (deleteLinkError) {
+      return new Response(
+        JSON.stringify({ ok: false, error: deleteLinkError.message }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 4. 새로운 재료 정보를 다시 추가합니다.
+    // (재료가 ingredients 테이블에 없으면 생성, 있으면 사용 - upsert)
+    for (const ing of ingredients) {
+      if (!ing.name || !ing.amount) continue; // 빈 재료는 건너뛰기
+
+      // 4-1. ingredients 테이블에 재료 upsert
+      const { data: ingData, error: upsertIngError } = await supabase
+        .from("ingredients")
+        .upsert({ name: ing.name.trim(), cafe_id: cafeId })
+        .select("id")
+        .single();
+
+      if (upsertIngError) {
+        return new Response(
+          JSON.stringify({ ok: false, error: upsertIngError.message }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // 4-2. recipe_ingredients 연결 테이블에 데이터 insert
+      const { error: insertLinkError } = await supabase
+        .from("recipe_ingredients")
+        .insert({
+          recipe_id: recipePK,
+          ingredient_id: ingData.id,
+          quantity: ing.amount.trim(),
+        });
+
+      if (insertLinkError) {
+        return new Response(
+          JSON.stringify({ ok: false, error: insertLinkError.message }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // 모든 작업 성공
+    console.log(`products.U: cafe(${cafeId}), recipe(${menuId})`);
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        message: "레시피가 성공적으로 수정되었습니다.",
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (outerError: any) {
+    // ✅ 모든 예외를 최종적으로 catch
+    console.error("Unhandled error in action function:", outerError);
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: "서버 내부 오류 발생. 콘솔을 확인하세요.",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 };
 
-// 재료 타입 정의
-interface Ingredient {
-  id?: number;
-  name: string;
-  amount: string;
-}
-
 export default function RecipeFormPage() {
-  const navigate = useNavigate();
-  const { roleCode } = useRoleStore();
+  const { roleCode, isLoading } = useRoleStore();
   const { recipeId } = useParams<{ recipeId: string }>();
+  const navigation = useNavigation();
+  const navigate = useNavigate();
 
   // 레시피 상세 조회 (recipeId가 있으면 수정 모드, 없으면 생성 모드)
-  const { recipe } = useLoaderData<Recipe>();
+  const { recipe } = useLoaderData<any>(); // 타입을 any로 잠시 변경
+  const actionData = useActionData<{
+    ok: boolean;
+    message?: string;
+    error?: string;
+  }>();
   const isEditMode = Boolean(recipeId);
   console.log("recipe.loaderData", recipe, isEditMode);
 
@@ -114,8 +277,41 @@ export default function RecipeFormPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [steps, setSteps] = useState<string[]>([""]);
 
+  // 폼 제출이 완료되었는지 확인
+  const isSubmitting = navigation.state === "submitting";
+
+  // action 결과에 따라 토스트 메시지 표시
   useEffect(() => {
-    if (roleCode !== "MA") {
+    if (actionData) {
+      if (actionData.ok) {
+        toast.success("레시피 관리", { description: actionData.message });
+        navigate(`/dashboard/recipes/${recipeId}`);
+      } else {
+        toast.error("레시피 관리", { description: actionData.error });
+      }
+    }
+  }, [actionData, navigate]);
+
+  // 수정 모드일 때 데이터 채우기
+  useEffect(() => {
+    if (isEditMode && recipe) {
+      setName(recipe.name);
+      setDescription(recipe.description);
+      setIngredients(
+        recipe.ingredients.length > 0
+          ? recipe.ingredients
+          : [{ name: "", amount: "" }]
+      );
+      setSteps(recipe.steps.length > 0 ? recipe.steps : [""]);
+    }
+  }, [isEditMode, recipe]);
+
+  // 권한 확인 및 초기 데이터 설정
+  useEffect(() => {
+    if (isLoading || roleCode === null) {
+      return;
+    }
+    if (!["SA", "MA"].includes(roleCode)) {
       alert("접근 권한이 없습니다.");
       navigate("/dashboard");
     }
@@ -157,32 +353,50 @@ export default function RecipeFormPage() {
   const removeStep = (index: number) =>
     setSteps(steps.filter((_, i) => i !== index));
 
-  // 폼 제출 핸들러 (이벤트 객체 타입 지정)
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = { name, description, ingredients, steps };
-    console.log("Form Data Submitted:", formData);
-    alert(
-      isEditMode ? "레시피가 수정되었습니다." : "새 레시피가 등록되었습니다."
-    );
-    navigate("/dashboard/recipes");
+  // 폼 제출 핸들러 (디버깅용)
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    console.log("Form submission started!");
+    const formData = new FormData(event.currentTarget);
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
   };
 
-  // ✅ 매니저가 아닐 경우, 리다이렉트 되기 전까지 로딩 또는 null을 반환하여 UI 렌더링을 방지
-  if (roleCode !== "MA") {
-    return null; // 또는 <p>권한 확인 중...</p>
+  if (!recipe || !roleCode) {
+    return <Loader />;
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6 text-amber-800">
-        {isEditMode ? name : "새 레시피 등록"}
-      </h1>
-
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold mb-6 text-amber-800">
+          {isEditMode ? name : "새 레시피 등록"}
+        </h1>
+        <div className="flex space-x-3">
+          <Link to="/dashboard/recipes">
+            <button
+              onClick={() => navigate(-1)}
+              className="bg-gray-500 text-white font-bold py-2 px-2 rounded-lg hover:bg-gray-600"
+            >
+              <ChevronLeft className="h-6 w-6" />
+              {""}
+            </button>
+          </Link>
+        </div>
+      </div>
       <Form
-        onSubmit={handleSubmit}
+        method="post"
+        onSubmit={handleFormSubmit} // 디버깅용 코드 유지
         className="bg-white p-6 rounded-lg shadow-md space-y-6"
       >
+        <input type="hidden" name="actionType" value="U" />
+        <input type="hidden" name="steps" value={JSON.stringify(steps)} />
+        <input
+          type="hidden"
+          name="ingredients"
+          value={JSON.stringify(ingredients)}
+        />
+
         {/* 레시피 이름, 설명 */}
         <div>
           <label htmlFor="description" className="block text-lg font-bold mb-2">
@@ -274,24 +488,24 @@ export default function RecipeFormPage() {
         </div>
 
         {/* 최종 제출 버튼 */}
-        <div className="flex justify-end space-x-4 pt-4 border-t">
-          <button
+        <div className="flex justify-end space-x-4 pt-0">
+          <Button
             type="button"
+            variant="outline"
+            className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
             onClick={() => navigate("/dashboard/recipes")}
-            // ✅ 보조 버튼 스타일로 변경
-            className="bg-white text-gray-700 border border-gray-300 font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
           >
-            <XCircle size={18} />
+            <XCircle className="h-4 w-4" />
             취소
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            // ✅ amber 색상으로 변경
-            className="bg-amber-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2"
+            className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+            disabled={isSubmitting}
           >
-            <Save size={18} />
-            {isEditMode ? "수정 완료" : "등록하기"}
-          </button>
+            <Save className="h-4 w-4" />
+            {isSubmitting ? "저장 중..." : "저장"}
+          </Button>
         </div>
       </Form>
     </div>

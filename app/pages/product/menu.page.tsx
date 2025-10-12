@@ -668,11 +668,10 @@ export const action: ActionFunction = async ({
 };
 
 export default function MenusPage() {
-  // 모든 훅을 컴포넌트 최상단에 조건 없이 호출합니다.
   const { roleCode, isLoading } = useRoleStore();
   const { productId } = useParams<{ productId: string }>();
-  const navigate = useNavigate();
   const navigation = useNavigation();
+  const navigate = useNavigate();
 
   // 메뉴 목록 로더 데이터
   const loaderData = useLoaderData() as [Product[], Menu[], string];
