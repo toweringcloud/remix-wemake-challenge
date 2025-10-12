@@ -691,7 +691,7 @@ export default function ProductsPage() {
 
         {["SA", "MA"].includes(roleCode) && (
           <button
-            className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
+            className="cursor-pointer bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
             onClick={handleNewClick}
           >
             <Plus className="h-4 w-4" />
@@ -714,14 +714,14 @@ export default function ProductsPage() {
                 <div className="flex items-center gap-2 ml-auto -mb-2">
                   <button
                     onClick={() => handleEditClick(product)}
-                    className="flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors"
+                    className="cursor-pointer flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors"
                   >
                     <Pencil className="h-4 w-4" />
                     수정
                   </button>
                   <button
                     onClick={() => handleDeleteClick(product)}
-                    className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
+                    className="cursor-pointer flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
                   >
                     <Trash2 size={14} />
                     삭제
@@ -825,7 +825,7 @@ export default function ProductsPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                className="cursor-pointer group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
                 onClick={() => setIsNewDialogOpen(false)}
               >
                 <XCircle className="h-4 w-4" />
@@ -834,7 +834,7 @@ export default function ProductsPage() {
               {/* ✅ isSubmitting 상태를 사용해 버튼 비활성화 및 로딩 표시 */}
               <Button
                 type="submit"
-                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                className="cursor-pointer group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
                 disabled={isSubmitting}
               >
                 <Save className="h-4 w-4" />
@@ -966,7 +966,7 @@ export default function ProductsPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                className="cursor-pointer group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
                 onClick={() => setIsEditDialogOpen(false)}
               >
                 <XCircle className="h-4 w-4" />
@@ -975,7 +975,7 @@ export default function ProductsPage() {
               {/* ✅ isSubmitting 상태를 사용해 버튼 비활성화 및 로딩 표시 */}
               <Button
                 type="submit"
-                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                className="cursor-pointer group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
                 disabled={isSubmitting}
               >
                 <Save className="h-4 w-4" />
@@ -1000,7 +1000,7 @@ export default function ProductsPage() {
             <AlertDialogCancel asChild>
               <Button
                 variant="outline"
-                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                className="cursor-pointer group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
                 onClick={() => setOneToDelete(null)}
               >
                 <XCircle className="h-4 w-4 group-hover:text-red-600 transition-colors" />
@@ -1020,7 +1020,7 @@ export default function ProductsPage() {
                 <Button
                   onClick={handleConfirmDelete}
                   variant="destructive"
-                  className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
+                  className="cursor-pointer group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
                   disabled={isSubmitting}
                 >
                   <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />

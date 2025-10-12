@@ -25,6 +25,8 @@ export default function Header() {
         : "text-amber-700 hover:bg-amber-100"
     }`;
 
+  if (!roleCode) return null;
+
   return (
     <header className="bg-white/70 backdrop-blur-sm border-b border-amber-200 z-20 relative">
       <div className="container mx-auto px-0 py-2 flex justify-between items-center">
@@ -56,7 +58,7 @@ export default function Header() {
                   <span>{"카페"}</span>
                 </NavLink>
               ) : null}
-              {roleCode === "SA" || roleCode === "MA" ? (
+              {["SA", "MA"].includes(roleCode) ? (
                 <NavLink to="/dashboard/products" className={navLinkClass}>
                   <ShoppingCart size={18} />
                   <span>{"상품"}</span>
@@ -70,10 +72,11 @@ export default function Header() {
                 <Archive size={18} />
                 <span>{"재고"}</span>
               </NavLink>
+
               <Form action="/logout" method="post">
                 <button
                   type="submit"
-                  className="flex items-center gap-2 text-amber-700 hover:bg-amber-100 font-semibold py-2 px-3 rounded-md transition-colors"
+                  className="cursor-pointer flex items-center gap-2 text-amber-700 hover:bg-amber-100 font-semibold py-2 px-3 rounded-md transition-colors"
                 >
                   <LogOut size={16} />
                   <span>로그아웃</span>

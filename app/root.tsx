@@ -12,8 +12,8 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { Toaster } from "~/components/ui/sonner";
-import { useRoleStore } from "./stores/user.store";
 import { createClient } from "./lib/supabase.server";
+import { useRoleStore } from "./stores/user.store";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -29,9 +29,9 @@ export const links: Route.LinksFunction = () => [
 ];
 
 // how to apploy favicon without using a library
-// 1) https://feathericons.com/?query=coffee
-// 2) https://favicon.io/favicon-converter
-// 3) put the files in the public folder
+// 1) get sample image at https://feathericons.com/?query=coffee
+// 2) convert imgage to icons at https://favicon.io/favicon-converter
+// 3) put the icon files in the public folder
 // 4) add the links to layout section of the head
 export function Layout({ children }: { children: React.ReactNode }) {
   return (

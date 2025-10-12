@@ -29,6 +29,8 @@ export default function Sidebar() {
       : "text-amber-700 hover:bg-amber-100";
   };
 
+  if (!roleCode) return null;
+
   return (
     <>
       {/* ✅ 오버레이 수정:
@@ -73,7 +75,7 @@ export default function Sidebar() {
               <span className="text-xs font-semibold">카페</span>
             </NavLink>
           ) : null}
-          {roleCode === "SA" || roleCode === "MA" ? (
+          {["SA", "MA"].includes(roleCode) ? (
             <NavLink
               to="/dashboard/products"
               className={({ isActive }) =>

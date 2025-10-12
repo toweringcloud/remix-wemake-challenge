@@ -882,7 +882,7 @@ export default function MenusPage() {
 
         {["SA", "MA"].includes(roleCode) && (
           <button
-            className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
+            className="cursor-pointer bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 flex flex-row gap-2 items-center"
             onClick={() => handleNewClick()}
           >
             <Plus className="h-4 w-4" /> 등록
@@ -906,14 +906,14 @@ export default function MenusPage() {
                 <div className="flex items-center gap-2 ml-auto -mb-2">
                   <button
                     onClick={() => handleEditClick(menu)}
-                    className="flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors"
+                    className="cursor-pointer flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors"
                   >
                     <Pencil className="h-4 w-4" />
                     수정
                   </button>
                   <button
                     onClick={() => handleDeleteClick(menu)}
-                    className="flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
+                    className="cursor-pointer flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
                   >
                     <Trash2 size={14} />
                     삭제
@@ -942,55 +942,56 @@ export default function MenusPage() {
             <div className="grid gap-4 pt-2 pb-8">
               <input type="hidden" name="actionType" value="C" />
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="productId" className="text-right">
-                  카테고리
-                </Label>
-                <Select
-                  name="productId"
-                  defaultValue={selectedProductId}
-                  onValueChange={setEditProductSelection}
-                >
-                  <SelectTrigger className="w-[120px] col-span-3 bg-white">
-                    <SelectValue placeholder="카테고리 선택" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white shadow-md border border-stone-200">
-                    {products
-                      .filter((p) => p.id !== 0)
-                      .map((product) => (
-                        <SelectItem
-                          key={product.id}
-                          value={product.id.toString()}
-                        >
-                          {product.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                {actionData?.errors?.productId && (
-                  <p className="col-start-2 col-span-3 text-sm text-red-500">
-                    {actionData.errors.productId[0]}
-                  </p>
-                )}
+              <div className="grid grid-cols-2 items-start gap-4 -mb-2">
+                {/* 카테고리 필드 */}
+                <div className="space-y-2">
+                  <Label htmlFor="productId">카테고리</Label>
+                  <Select
+                    name="productId"
+                    defaultValue={selectedProductId}
+                    onValueChange={setEditProductSelection}
+                  >
+                    <SelectTrigger className="w-full bg-white">
+                      <SelectValue placeholder="카테고리 선택" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white shadow-md border border-stone-200">
+                      {products
+                        .filter((p) => p.id !== 0)
+                        .map((product) => (
+                          <SelectItem
+                            key={product.id}
+                            value={product.id.toString()}
+                          >
+                            {product.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {actionData?.errors?.productId && (
+                    <p className="text-sm text-red-500">
+                      {actionData.errors.productId[0]}
+                    </p>
+                  )}
+                </div>
+
+                {/* 이름 필드 */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">이름</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="메뉴 명"
+                    autoComplete="off"
+                    defaultValue=""
+                  />
+                  {actionData?.errors?.name && (
+                    <p className="text-sm text-red-500">
+                      {actionData.errors.name[0]}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  이름
-                </Label>
-                <Input
-                  id="name"
-                  name="name"
-                  placeholder="메뉴 명"
-                  className="col-span-3"
-                  autoComplete="off"
-                  defaultValue=""
-                />
-                {actionData?.errors?.name && (
-                  <p className="col-start-2 col-span-3 text-sm text-red-500">
-                    {actionData.errors.name[0]}
-                  </p>
-                )}
-              </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">
                   설명
@@ -1009,6 +1010,7 @@ export default function MenusPage() {
                   </p>
                 )}
               </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="temperature" className="text-right">
                   온도
@@ -1038,6 +1040,7 @@ export default function MenusPage() {
                   </p>
                 )}
               </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="price" className="text-right">
                   가격
@@ -1057,6 +1060,7 @@ export default function MenusPage() {
                   </p>
                 )}
               </div>
+
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="image" className="text-right pt-2">
                   이미지
@@ -1091,6 +1095,7 @@ export default function MenusPage() {
                   )}
                 </div>
               </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">AI 옵션</Label>
                 <div className="col-start-2 col-span-3 flex items-center space-x-2">
@@ -1099,23 +1104,24 @@ export default function MenusPage() {
                     htmlFor="generate-image"
                     className="text-sm font-medium leading-none"
                   >
-                    이미지 자동 생성
+                    이미지 생성
                   </Label>
                   <Checkbox id="generate-recipe" name="generateRecipe" />
                   <Label
                     htmlFor="generate-recipe"
                     className="text-sm font-medium leading-none"
                   >
-                    레시피 자동 생성
+                    레시피 생성
                   </Label>
                 </div>
               </div>
             </div>
-            <DialogFooter>
+
+            <DialogFooter className="flex-row space-x-2 sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
-                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                className="cursor-pointer group flex flex-1 items-center gap-1 transition-colors hover:border-red-600 hover:text-red-600 sm:flex-initial"
                 onClick={() => setIsNewDialogOpen(false)}
               >
                 <XCircle className="h-4 w-4" />
@@ -1123,7 +1129,7 @@ export default function MenusPage() {
               </Button>
               <Button
                 type="submit"
-                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                className="cursor-pointer group flex flex-1 items-center gap-1 bg-amber-600 text-white transition-colors hover:bg-amber-700 sm:flex-initial"
                 disabled={isSubmitting}
               >
                 <Save className="h-4 w-4" />
@@ -1140,7 +1146,7 @@ export default function MenusPage() {
           <DialogHeader>
             <DialogTitle>"{selectedMenu?.name}" 메뉴 수정</DialogTitle>
             <DialogDescription>
-              메뉴의 이름, 설명, 이미지를 수정합니다.
+              메뉴의 이름, 설명, 가격, 이미지를 수정합니다.
             </DialogDescription>
           </DialogHeader>
           <Form
@@ -1152,60 +1158,60 @@ export default function MenusPage() {
               <input type="hidden" name="actionType" value="U" />
               <input type="hidden" name="id" value={selectedMenu?.id} />
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="productId" className="text-right">
-                  카테고리
-                </Label>
-                <Select
-                  name="productId"
-                  defaultValue={
-                    editProductSelection ||
-                    selectedMenu?.productId.toString() ||
-                    ""
-                  }
-                  onValueChange={setEditProductSelection}
-                >
-                  <SelectTrigger className="w-[120px] col-span-3 bg-white">
-                    <SelectValue placeholder="카테고리 선택" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white shadow-md border border-stone-200">
-                    {products
-                      .filter((p) => p.id !== 0)
-                      .map((product) => (
-                        <SelectItem
-                          key={product.id}
-                          value={product.id.toString()}
-                        >
-                          {product.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                {actionData?.errors?.productId && (
-                  <p className="col-start-2 col-span-3 text-sm text-red-500">
-                    {actionData.errors.productId[0]}
-                  </p>
-                )}
+              <div className="grid grid-cols-2 items-start gap-4 -mb-2">
+                {/* 카테고리 필드 */}
+                <div className="space-y-2">
+                  <Label htmlFor="productId">카테고리</Label>
+                  <Select
+                    name="productId"
+                    defaultValue={
+                      editProductSelection ||
+                      selectedMenu?.productId.toString() ||
+                      ""
+                    }
+                    onValueChange={setEditProductSelection}
+                  >
+                    <SelectTrigger className="w-full bg-white">
+                      <SelectValue placeholder="카테고리 선택" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white shadow-md border border-stone-200">
+                      {products
+                        .filter((p) => p.id !== 0)
+                        .map((product) => (
+                          <SelectItem
+                            key={product.id}
+                            value={product.id.toString()}
+                          >
+                            {product.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {actionData?.errors?.productId && (
+                    <p className="text-sm text-red-500">
+                      {actionData.errors.productId[0]}
+                    </p>
+                  )}
+                </div>
+
+                {/* 이름 필드 */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">이름</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="메뉴 명"
+                    autoComplete="off"
+                    defaultValue={selectedMenu?.name || ""}
+                  />
+                  {actionData?.errors?.name && (
+                    <p className="text-sm text-red-500">
+                      {actionData.errors.name[0]}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  이름
-                </Label>
-                <Input
-                  id="name"
-                  name="name"
-                  placeholder="메뉴 명"
-                  className="col-span-3"
-                  autoComplete="off"
-                  defaultValue={selectedMenu?.name || ""}
-                />
-                {/* ✅ 이름 필드에 대한 에러 메시지 표시 */}
-                {actionData?.errors?.name && (
-                  <p className="col-start-2 col-span-3 text-sm text-red-500">
-                    {actionData.errors.name[0]}
-                  </p>
-                )}
-              </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">
                   설명
@@ -1225,6 +1231,7 @@ export default function MenusPage() {
                   </p>
                 )}
               </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="temperature" className="text-right">
                   온도
@@ -1260,6 +1267,7 @@ export default function MenusPage() {
                   </p>
                 )}
               </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="price" className="text-right">
                   가격
@@ -1279,6 +1287,7 @@ export default function MenusPage() {
                   </p>
                 )}
               </div>
+
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="image" className="text-right pt-2">
                   이미지
@@ -1315,7 +1324,7 @@ export default function MenusPage() {
                     )}
                   </div>
                   {/* ✅ 이미지 삭제 스위치 */}
-                  <div className="flex items-center justify-between gap-2 pt-2">
+                  <div className="flex items-center justify-between gap-2 pt-1">
                     <div className="flex items-center gap-2">
                       <Switch
                         id="removeImage"
@@ -1340,11 +1349,12 @@ export default function MenusPage() {
                 </div>
               </div>
             </div>
-            <DialogFooter>
+
+            <DialogFooter className="flex-row space-x-2 sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
-                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                className="cursor-pointer group flex flex-1 items-center gap-1 transition-colors hover:border-red-600 hover:text-red-600 sm:flex-initial"
                 onClick={() => setIsEditDialogOpen(false)}
               >
                 <XCircle className="h-4 w-4" />
@@ -1352,7 +1362,7 @@ export default function MenusPage() {
               </Button>
               <Button
                 type="submit"
-                className="group flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                className="cursor-pointer group flex flex-1 items-center gap-1 bg-amber-600 text-white transition-colors hover:bg-amber-700 sm:flex-initial"
                 disabled={isSubmitting}
               >
                 <Save className="h-4 w-4" />
@@ -1376,7 +1386,7 @@ export default function MenusPage() {
             <AlertDialogCancel asChild>
               <Button
                 variant="outline"
-                className="group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
+                className="cursor-pointer group flex items-center gap-1 hover:text-red-600 hover:border-red-600 transition-colors"
                 onClick={() => setOneToDelete(null)}
               >
                 <XCircle className="h-4 w-4 group-hover:text-red-600 transition-colors" />
@@ -1396,7 +1406,7 @@ export default function MenusPage() {
                 <Button
                   onClick={handleConfirmDelete}
                   variant="destructive"
-                  className="group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
+                  className="cursor-pointer group flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition-colors"
                   disabled={isSubmitting}
                 >
                   <Trash2 className="h-4 w-4 group-hover:text-white transition-colors" />
