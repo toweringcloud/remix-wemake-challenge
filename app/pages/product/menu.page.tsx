@@ -51,6 +51,7 @@ import { Switch } from "~/components/ui/switch";
 
 import type { Route } from "./+types/menu.page";
 import { MenuCard } from "~/components/menu-card";
+import { MenuStatusChanger, STATUS_OPTIONS } from "~/components/menu-status";
 import { getCookieSession } from "~/lib/cookie.server";
 import { createThumbnail } from "~/lib/image.server";
 import { createClient } from "~/lib/supabase.server";
@@ -76,18 +77,26 @@ interface Menu {
   imageUrl?: string;
   isHot?: boolean;
   price: number;
-  status: string;
+  status: keyof typeof STATUS_OPTIONS;
   category: string;
   productId: number;
   [key: string]: any;
 }
+
+// 메뉴 상태 정의
+const menuStatusSchema = z.enum([
+  "BEFORE_OPEN",
+  "ON_SALE",
+  "SOLD_OUT",
+  "OUT_OF_STOCK",
+  "HOLD",
+]);
 
 export const loader: LoaderFunction = async ({
   request,
   params,
 }: LoaderFunctionArgs) => {
   const session = getCookieSession(request.headers.get("Cookie"));
-  if (!session) throw new Response("Unauthorized", { status: 401 });
   if (!session?.cafeId) return redirect("/login");
   const cafeId = session.cafeId;
 
@@ -181,6 +190,11 @@ const schemaForUpdate = z.object({
     .pipe(z.number().int({ message: "가격은 정수여야 합니다." })), // ✅ 가격은 정수여야 함
 });
 
+const schemaForStatusUpdate = z.object({
+  id: z.string().min(1, { message: "메뉴 아이디는 필수입니다." }),
+  status: menuStatusSchema,
+});
+
 const schemaForDelete = z.object({
   id: z.string().min(1, { message: "메뉴 아이디는 필수입니다." }),
 });
@@ -191,7 +205,6 @@ export const action: ActionFunction = async ({
 }: ActionFunctionArgs) => {
   try {
     const session = getCookieSession(request.headers.get("Cookie"));
-    if (!session) throw new Response("Unauthorized", { status: 401 });
     if (!session?.cafeId) return redirect("/login");
     const cafeId = session.cafeId;
 
@@ -202,7 +215,7 @@ export const action: ActionFunction = async ({
     const formData = await request.formData();
     const actionType = formData.get("actionType");
 
-    if (!actionType || !["C", "U", "D"].includes(actionType.toString())) {
+    if (!actionType || !["C", "U", "S", "D"].includes(actionType.toString())) {
       return new Response(
         JSON.stringify({ ok: false, error: "Invalid action type" }),
         {
@@ -579,6 +592,42 @@ export const action: ActionFunction = async ({
       });
     }
 
+    // --- S: 상태 수정 (Status Update) ---
+    if (actionType === "S") {
+      const submission = schemaForStatusUpdate.safeParse(
+        Object.fromEntries(formData)
+      );
+
+      if (!submission.success) {
+        return new Response(
+          JSON.stringify({ errors: submission.error.flatten().fieldErrors }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      const { id: menuId, status } = submission.data;
+
+      const { error } = await supabase
+        .from("menus")
+        .update({ status: status })
+        .eq("id", menuId)
+        .eq("cafe_id", cafeId);
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ ok: false, error: error.message }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      return new Response(JSON.stringify({ ok: true, action: actionType }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // --- D: 삭제 (Delete) ---
     if (actionType === "D") {
       const submission = schemaForDelete.safeParse(
@@ -678,7 +727,7 @@ export default function MenusPage() {
 
   // 메뉴 등록/수정/삭제 결과 조회
   const actionData = useActionData() as {
-    action?: "C" | "U" | "D";
+    action?: "C" | "U" | "S" | "D";
     ok?: boolean;
     errors?: FieldErrors;
     error?: string;
@@ -817,6 +866,8 @@ export default function MenusPage() {
           successMessage = "메뉴가 성공적으로 등록되었습니다.";
         if (actionData.action === "U")
           successMessage = "메뉴가 성공적으로 수정되었습니다.";
+        if (actionData.action === "S")
+          successMessage = "메뉴 상태가 변경되었습니다.";
         if (actionData.action === "D")
           successMessage = "메뉴가 성공적으로 삭제되었습니다.";
 
@@ -904,16 +955,20 @@ export default function MenusPage() {
             action={
               ["SA", "MA"].includes(roleCode) && (
                 <div className="flex items-center gap-2 ml-auto -mb-2">
+                  {/* <MenuStatusChanger
+                    menuId={menu.id}
+                    currentStatus={menu.status}
+                  /> */}
                   <button
                     onClick={() => handleEditClick(menu)}
-                    className="cursor-pointer flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors"
+                    className="cursor-pointer flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors whitespace-nowrap"
                   >
                     <Pencil className="h-4 w-4" />
                     수정
                   </button>
                   <button
                     onClick={() => handleDeleteClick(menu)}
-                    className="cursor-pointer flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors"
+                    className="cursor-pointer flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors whitespace-nowrap"
                   >
                     <Trash2 size={14} />
                     삭제

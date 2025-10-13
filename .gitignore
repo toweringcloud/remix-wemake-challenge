@@ -6,6 +6,7 @@
 /build/
 
 # Additional
+.temp
 .env*
 /app/models/migrations/*
 /app/models/*_real*

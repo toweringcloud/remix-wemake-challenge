@@ -123,10 +123,10 @@ export default function RecipeDetailPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold mb-6 text-amber-800">
+        <h1 className="text-2xl font-bold mb-6 text-amber-800">
           {recipe.name}
         </h1>
-        <div className="flex space-x-3">
+        <div className="flex space-x-2">
           <Link to="/dashboard/recipes">
             <button
               onClick={() => navigate(-1)}
@@ -140,8 +140,8 @@ export default function RecipeDetailPage() {
           {roleCode === "MA" && (
             <Link to={`/dashboard/recipes/${recipe.id}/edit`}>
               <button className="flex flex-row items-center gap-2 bg-green-600 text-white font-bold py-2 px-2 rounded-lg hover:bg-green-700">
-                <Pencil className="h-5 w-5" />
-                수정
+                <Pencil className="h-6 w-6" />
+                {""}
               </button>
             </Link>
           )}

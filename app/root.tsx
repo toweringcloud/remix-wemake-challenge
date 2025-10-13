@@ -28,7 +28,7 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-// how to apploy favicon without using a library
+// how to apply favicon without using a library
 // 1) get sample image at https://feathericons.com/?query=coffee
 // 2) convert imgage to icons at https://favicon.io/favicon-converter
 // 3) put the icon files in the public folder
@@ -90,7 +90,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   console.log("App.pathname", pathname);
   console.log("App.navigation.state", navigation.state);
   console.log("App.isLoading", isLoading);
-  console.log("App.user", loaderData.user);
+  // console.log("App.user", loaderData.user);
   return <Outlet />;
 }
 

@@ -64,15 +64,21 @@ export function MenuCard({
           <div className="flex flex-col w-[70%]">
             <CardHeader>
               <Link to={`/dashboard/recipes/${id}`}>
-                <CardTitle className="text-lg font-bold text-amber-800 hover:underline flex flex-row gap-1">
-                  {name}{" "}
-                  {category !== "디저트" ? (
-                    isHot === undefined ? null : isHot === true ? (
-                      <Flame className="h-4 w-4 text-red-500" />
-                    ) : (
-                      <Snowflake className="h-4 w-4 text-blue-500" />
-                    )
-                  ) : null}
+                <CardTitle className="text-md font-bold text-amber-800 flex items-center justify-between">
+                  <span className="flex items-center gap-1 hover:underline">
+                    {name.endsWith(" 아이스")
+                      ? name.substring(0, name.length - 4)
+                      : name}
+                    {category !== "디저트" &&
+                      (isHot === true ? (
+                        <Flame className="h-4 w-4 text-red-500" />
+                      ) : isHot === false ? (
+                        <Snowflake className="h-4 w-4 text-blue-500" />
+                      ) : null)}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-700">
+                    {price.toLocaleString()}원
+                  </span>
                 </CardTitle>
               </Link>
             </CardHeader>

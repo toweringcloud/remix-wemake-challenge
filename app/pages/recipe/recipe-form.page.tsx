@@ -369,7 +369,7 @@ export default function RecipeFormPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold mb-6 text-amber-800">
+        <h1 className="text-2xl font-bold mb-6 text-amber-800">
           {isEditMode ? name : "새 레시피 등록"}
         </h1>
         <div className="flex space-x-3">
