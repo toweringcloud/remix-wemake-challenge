@@ -21,7 +21,7 @@ import { createClient } from "~/lib/supabase.server";
 import { useRoleStore } from "~/stores/user.store";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "Item List | Caferium" },
+  { title: "Items | Caferium" },
   { name: "description", content: "item list" },
 ];
 

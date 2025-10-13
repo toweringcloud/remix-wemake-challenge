@@ -24,7 +24,7 @@ import { createClient } from "~/lib/supabase.server";
 import { useRoleStore } from "~/stores/user.store";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "Recipe List | Caferium" },
+  { title: "Recipes | Caferium" },
   { name: "description", content: "show all the recipe cards" },
 ];
 

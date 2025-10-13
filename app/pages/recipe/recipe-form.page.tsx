@@ -28,7 +28,7 @@ export const meta: Route.MetaFunction = () => {
   const { recipeId } = useParams<{ recipeId: string }>();
   const isEditMode = Boolean(recipeId);
   return [
-    { title: `Recipe ${isEditMode ? "Modify" : "Add"} | Caferium` },
+    { title: `Recipe ${isEditMode ? "Edit" : "Add"} | Caferium` },
     { name: "description", content: "add new recipe or modify one" },
   ];
 };

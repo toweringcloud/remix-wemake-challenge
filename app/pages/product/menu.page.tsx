@@ -954,11 +954,11 @@ export default function MenusPage() {
             category={menu.category}
             action={
               ["SA", "MA"].includes(roleCode) && (
-                <div className="flex items-center gap-2 ml-auto -mb-2">
-                  {/* <MenuStatusChanger
+                <div className="flex w-full items-center justify-end gap-1">
+                  <MenuStatusChanger
                     menuId={menu.id}
                     currentStatus={menu.status}
-                  /> */}
+                  />
                   <button
                     onClick={() => handleEditClick(menu)}
                     className="cursor-pointer flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors whitespace-nowrap"

@@ -44,53 +44,51 @@ export function MenuCard({
   const showFallback = hasLoadError || !imageUrl;
 
   return (
-    <div className="group flex flex-col h-full">
-      <Card className="flex flex-col flex-grow overflow-hidden transition-all duration-300 bg-stone-50 border-amber-200 group-hover:shadow-xl group-hover:border-amber-400">
-        <div className="flex">
-          <div className="w-[30%] flex-shrink-0">
-            <Link to={`/dashboard/recipes/${id}`}>
-              {showFallback ? (
-                <PlaceholderImage text={name} />
-              ) : (
-                <img
-                  src={imageUrl}
-                  alt={name}
-                  className="w-full h-full object-cover"
-                  onError={() => setHasLoadError(true)}
-                />
-              )}
-            </Link>
-          </div>
-          <div className="flex flex-col w-[70%]">
-            <CardHeader>
-              <Link to={`/dashboard/recipes/${id}`}>
-                <CardTitle className="text-md font-bold text-amber-800 flex items-center justify-between">
-                  <span className="flex items-center gap-1 hover:underline">
-                    {name.endsWith(" 아이스")
-                      ? name.substring(0, name.length - 4)
-                      : name}
-                    {category !== "디저트" &&
-                      (isHot === true ? (
-                        <Flame className="h-4 w-4 text-red-500" />
-                      ) : isHot === false ? (
-                        <Snowflake className="h-4 w-4 text-blue-500" />
-                      ) : null)}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-700">
-                    {price.toLocaleString()}원
-                  </span>
-                </CardTitle>
-              </Link>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <CardDescription className="text-stone-600">
-                {description}
-              </CardDescription>
-            </CardContent>
-            <CardFooter>{action}</CardFooter>
-          </div>
+    <Card className="group h-full flex flex-col overflow-hidden transition-all duration-300 bg-stone-50 border-amber-200 hover:shadow-xl hover:border-amber-400">
+      <div className="flex flex-1">
+        <div className="w-[30%] flex-shrink-0">
+          <Link to={`/dashboard/recipes/${id}`}>
+            {showFallback ? (
+              <PlaceholderImage text={name} />
+            ) : (
+              <img
+                src={imageUrl}
+                alt={name}
+                className="w-full h-full object-cover"
+                onError={() => setHasLoadError(true)}
+              />
+            )}
+          </Link>
         </div>
-      </Card>
-    </div>
+        <div className="flex flex-col w-[70%]">
+          <CardHeader>
+            <Link to={`/dashboard/recipes/${id}`}>
+              <CardTitle className="text-md font-bold text-amber-800 flex items-center justify-between">
+                <span className="flex items-center gap-1 hover:underline">
+                  {name.endsWith(" 아이스")
+                    ? name.substring(0, name.length - 4)
+                    : name}
+                  {category !== "디저트" &&
+                    (isHot === true ? (
+                      <Flame className="h-4 w-4 text-red-500" />
+                    ) : isHot === false ? (
+                      <Snowflake className="h-4 w-4 text-blue-500" />
+                    ) : null)}
+                </span>
+                <span className="text-sm font-semibold text-gray-700">
+                  {price.toLocaleString()}원
+                </span>
+              </CardTitle>
+            </Link>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <CardDescription className="text-stone-600">
+              {description}
+            </CardDescription>
+          </CardContent>
+          <CardFooter className="-mb-1">{action}</CardFooter>
+        </div>
+      </div>
+    </Card>
   );
 }
