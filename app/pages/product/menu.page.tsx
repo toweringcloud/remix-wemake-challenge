@@ -954,21 +954,21 @@ export default function MenusPage() {
             category={menu.category}
             action={
               ["SA", "MA"].includes(roleCode) && (
-                <div className="flex w-full items-center justify-end gap-1">
+                <div className="flex w-full items-center justify-end gap-1.5 pt-1.5">
                   <MenuStatusChanger
                     menuId={menu.id}
                     currentStatus={menu.status}
                   />
                   <button
                     onClick={() => handleEditClick(menu)}
-                    className="cursor-pointer flex items-center gap-1 text-sm text-amber-600 hover:text-white p-2 rounded-md hover:bg-amber-500 transition-colors whitespace-nowrap"
+                    className="cursor-pointer flex items-center gap-1 text-sm text-amber-600 hover:text-white p-1.5 rounded-md hover:bg-amber-500 transition-colors whitespace-nowrap"
                   >
                     <Pencil className="h-4 w-4" />
                     수정
                   </button>
                   <button
                     onClick={() => handleDeleteClick(menu)}
-                    className="cursor-pointer flex items-center gap-1 text-sm text-red-600 hover:text-white p-2 rounded-md hover:bg-red-500 transition-colors whitespace-nowrap"
+                    className="cursor-pointer flex items-center gap-1 text-sm text-red-600 hover:text-white p-1.5 rounded-md hover:bg-red-500 transition-colors whitespace-nowrap"
                   >
                     <Trash2 size={14} />
                     삭제

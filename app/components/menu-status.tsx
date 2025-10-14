@@ -12,11 +12,11 @@ import { cn } from "~/lib/utils";
 
 // 상태 값과 한글 표시명을 매핑하는 객체
 export const STATUS_OPTIONS = {
-  BEFORE_OPEN: "오픈 전",
+  BEFORE_OPEN: "오픈전",
   ON_SALE: "판매중",
   SOLD_OUT: "매진",
   OUT_OF_STOCK: "품절",
-  HOLD: "일시 중지",
+  HOLD: "보류",
 };
 
 // 상태 변경 UI를 위한 새로운 컴포넌트
@@ -39,10 +39,10 @@ export function MenuStatusChanger({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {/* ✅ 1. className에 cn 함수를 사용하여 동적 스타일을 적용합니다. */}
-        <Button
-          variant="ghost"
+        <button
+          // variant="ghost"
           className={cn(
-            "cursor-pointer flex items-center gap-1 text-sm p-2 rounded-md transition-colors whitespace-nowrap",
+            "cursor-pointer flex items-center gap-1 text-sm p-1.5 rounded-md transition-colors whitespace-nowrap",
             // ✅ 2. 상태에 따른 조건부 클래스
             optimisticStatus === "ON_SALE"
               ? "text-green-600 hover:bg-green-500 hover:text-white"
@@ -52,7 +52,7 @@ export function MenuStatusChanger({
         >
           <Tag className="h-4 w-4" />
           {STATUS_OPTIONS[optimisticStatus] || "상태 변경"}
-        </Button>
+        </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
