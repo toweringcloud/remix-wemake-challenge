@@ -1,3 +1,5 @@
+import { GoogleAuth } from "google-auth-library";
+import { GoogleGenAI } from "@google/genai";
 import { Loader, Pencil, Plus, Save, Trash2, XCircle } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -53,7 +55,7 @@ import type { Route } from "./+types/menu.page";
 import { MenuCard } from "~/components/menu-card";
 import { MenuStatusChanger, STATUS_OPTIONS } from "~/components/menu-status";
 import { getCookieSession } from "~/lib/cookie.server";
-import { createThumbnail } from "~/lib/image.server";
+import { createThumbnail, createThumbnailPlus } from "~/lib/image.server";
 import { createClient } from "~/lib/supabase.server";
 import { cn } from "~/lib/utils";
 import { useRoleStore } from "~/stores/user.store";
@@ -253,6 +255,11 @@ export const action: ActionFunction = async ({
       } = submission.data;
       console.log("menus.C", submission.data);
 
+      // +++ AI 옵션 값 가져오기 +++
+      // HTML checkbox는 체크되면 'on' 값을, 아니면 null을 반환합니다.
+      const generateImage = formData.get("generateImage") === "on";
+      const generateRecipe = formData.get("generateRecipe") === "on";
+
       // temperature 값을 boolean으로 변환 (supabase 컬럼 타입에 맞춤)
       const isHotBoolean =
         temperature === "hot" ? true : temperature === "ice" ? false : null;
@@ -261,7 +268,99 @@ export const action: ActionFunction = async ({
       let imageThumbUrl: string | null = null;
       const imageFile = formData.get("image") as File;
 
-      if (imageFile && imageFile.size > 0) {
+      // +++ AI 이미지 생성 (옵션 선택 시) +++
+      if (generateImage) {
+        try {
+          const projectId = process.env.GOOGLE_PROJECT_ID;
+          if (!projectId) {
+            throw new Error("Google Cloud Project ID가 설정되지 않았습니다.");
+          }
+
+          // +++ Google 인증 라이브러리를 사용하여 OAuth 2.0 토큰 조회 +++
+          const auth = new GoogleAuth({
+            scopes: "https://www.googleapis.com/auth/cloud-platform",
+          });
+          const client = await auth.getClient();
+          const accessTokenResponse = await client.getAccessToken();
+          if (!accessTokenResponse.token) {
+            throw new Error("OAuth 2.0 액세스 토큰을 가져오지 못했습니다.");
+          }
+          const accessToken = accessTokenResponse.token;
+
+          // Imagen 2 모델을 호출하는 REST API 엔드포인트
+          const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/imagegeneration@005:predict`;
+
+          // Cafe 메뉴 이미지를 생성하기 위한 커스텀 프롬프트
+          const prompt = `A professional, clean, high-resolution photograph of a cafe drink or desert named '${temperature} ${name}'. Description: '${description || name}'. The drink is presented beautifully on a minimalist wooden cafe table, with soft, natural lighting. photorealistic, 4k.`;
+
+          console.log("Generating image with Imagen API using OAuth ...");
+          const apiResponse = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              instances: [{ prompt: prompt }],
+              parameters: { sampleCount: 1 },
+            }),
+          });
+
+          if (!apiResponse.ok) {
+            const errorBody = await apiResponse.json();
+            throw new Error(`Imagen API error: ${JSON.stringify(errorBody)}`);
+          }
+
+          const responseData = await apiResponse.json();
+          // API 응답에서 base64로 인코딩된 이미지 데이터를 추출합니다.
+          const base64Image = responseData.predictions[0].bytesBase64Encoded;
+          const imageBuffer = Buffer.from(base64Image, "base64");
+
+          // 1. 생성된 원본 이미지 업로드
+          const originalFilePath = `${storageDivision}/${uuidv4()}-ai-original.png`;
+          const { error: originalUploadError } = await storageInstance.upload(
+            originalFilePath,
+            imageBuffer,
+            { contentType: "image/png" }
+          );
+
+          if (originalUploadError) throw originalUploadError;
+          imageUrl =
+            storageInstance.getPublicUrl(originalFilePath).data.publicUrl;
+
+          // 2. 생성된 이미지로 썸네일 생성 및 업로드
+          const { buffer: thumbBuffer, mimeType: thumbMimeType } =
+            await createThumbnailPlus(imageBuffer);
+          const thumbFilePath = `${storageDivision}/${uuidv4()}-ai-thumb.webp`;
+          const { error: thumbUploadError } = await storageInstance.upload(
+            thumbFilePath,
+            thumbBuffer,
+            { contentType: thumbMimeType }
+          );
+
+          if (thumbUploadError) {
+            console.error(
+              "AI-generated thumbnail upload failed:",
+              thumbUploadError
+            );
+            imageThumbUrl = imageUrl; // 썸네일 실패 시 원본 이미지 URL로 대체
+          } else {
+            imageThumbUrl =
+              storageInstance.getPublicUrl(thumbFilePath).data.publicUrl;
+          }
+        } catch (error) {
+          console.error("AI Image generation failed:", error);
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: "AI 이미지 생성 또는 업로드에 실패했습니다.",
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      }
+      // +++ 사용자가 직접 이미지를 업로드한 경우 +++
+      else if (imageFile && imageFile.size > 0) {
         // ✅ 파일 확장자를 소문자로 변환합니다.
         const originalName = imageFile.name;
         const extension = originalName.split(".").pop()?.toLowerCase();
@@ -333,7 +432,7 @@ export const action: ActionFunction = async ({
         }
       }
 
-      // 1. 메뉴 등록 후에 방금 생성한 메뉴 데이터를 가져옵니다.
+      // 메뉴 등록 후에 방금 생성한 메뉴 데이터를 가져옵니다.
       const { data: newMenu, error } = await supabase
         .from("menus")
         .insert({
@@ -348,6 +447,7 @@ export const action: ActionFunction = async ({
         })
         .select()
         .single();
+      console.log("newMenu", newMenu);
 
       // 메뉴 등록 중 에러 처리
       if (error) {
@@ -360,28 +460,139 @@ export const action: ActionFunction = async ({
         );
       }
 
-      // 2. 성공적으로 생성된 메뉴의 정보를 사용하여 레시피를 등록합니다.
-      const { error: recipeError } = await supabase.from("recipes").insert({
-        name: newMenu.name, // 메뉴 이름과 동일하게 설정
-        steps: [], // 자바스크립트의 빈 배열은 Supabase가 '{}'::text[]로 처리합니다.
-        menu_id: newMenu.id, // 위에서 반환받은 새 메뉴의 ID
-        cafe_id: newMenu.cafe_id,
-      });
+      // +++ AI 레시피 생성 및 등록 (옵션 선택 시) +++
+      if (generateRecipe) {
+        try {
+          // AI 서비스 정의
+          const genAI = new GoogleGenAI({
+            apiKey: process.env.GOOGLE_API_KEY!,
+            apiVersion: "v1",
+          });
 
-      // 레시피 등록 중 에러 처리
-      if (recipeError) {
-        // 참고: 여기서는 메뉴는 생성되었지만 레시피 생성은 실패한 상태입니다.
-        // 필요하다면 이미 생성된 메뉴를 삭제하는 등의 추가적인 예외 처리를 할 수 있습니다.
-        return new Response(
-          JSON.stringify({
-            ok: false,
-            error: `레시피 생성 실패: ${recipeError.message}`,
-          }),
-          {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
+          // AI 프롬프트 정의
+          const recipePrompt = `
+            Create a simple cafe recipe for a drink named '${name}'.
+            Please provide the response ONLY in JSON format with two keys: "ingredients" (an array of strings) and "steps" (an array of strings).
+            The recipe should be practical for a small cafe.
+            ingredients should be an array of objetcs including name and amount field.
+            And ingredients and steps data should be shown in Korean instead of English.
+            Example: {"ingredients": [{name: "Milk", amount: "200ml"}, {name: "Espresso", amount: "1 Shot"}, {name: "Vanilla Syrup", amount: "1 Pump"}], "steps": ["Add syrup to the cup.", "Pour milk into the cup.", "Add espresso shot on top."]}
+          `;
+
+          // AI 서비스 결과 처리
+          const result = await genAI.models.generateContent({
+            model: process.env.GEMINI_MODEL!,
+            contents: [{ role: "user", parts: [{ text: recipePrompt }] }],
+          });
+
+          const responseText = result.text;
+          if (!responseText) {
+            throw new Error("AI가 유효한 텍스트 응답을 생성하지 못했습니다.");
           }
-        );
+
+          const cleanedJsonString = responseText
+            .replace("```json", "")
+            .replace("```", "")
+            .trim();
+          const recipeData = JSON.parse(cleanedJsonString!);
+          console.log("recipe-generated-by-ai", recipeData);
+
+          // recipes 테이블 스키마에 ingredients 컬럼이 필요합니다.
+          const { data: newRecipe, error: insertRecipeError } = await supabase
+            .from("recipes")
+            .insert({
+              name: newMenu.name,
+              steps: recipeData.steps, // 생성된 절차
+              menu_id: newMenu.id,
+              cafe_id: newMenu.cafe_id,
+            })
+            .select()
+            .single();
+          console.log("newRecipe", newRecipe);
+
+          if (insertRecipeError) {
+            return new Response(
+              JSON.stringify({ ok: false, error: insertRecipeError.message }),
+              {
+                status: 500,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
+
+          // ingredients 테이블에 재료 데이터를 upsert합니다.
+          for (const ing of recipeData.ingredients) {
+            if (!ing.name || !ing.amount) continue; // 빈 재료는 건너뛰기
+
+            // ingredients 테이블에 재료 upsert
+            const { data: ingData, error: upsertIngError } = await supabase
+              .from("ingredients")
+              .upsert({ name: ing.name.trim(), cafe_id: cafeId })
+              .select("id")
+              .single();
+
+            if (upsertIngError) {
+              return new Response(
+                JSON.stringify({ ok: false, error: upsertIngError.message }),
+                {
+                  status: 500,
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+            }
+
+            // recipe_ingredients 연결 테이블에 데이터 insert
+            const { error: insertLinkError } = await supabase
+              .from("recipe_ingredients")
+              .insert({
+                recipe_id: newRecipe.menu_id,
+                ingredient_id: ingData.id,
+                quantity: ing.amount.trim(),
+              });
+
+            if (insertLinkError) {
+              return new Response(
+                JSON.stringify({ ok: false, error: insertLinkError.message }),
+                {
+                  status: 500,
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+            }
+          }
+        } catch (recipeError) {
+          console.error("AI Recipe generation/insertion failed:", recipeError);
+          // 레시피 생성은 실패했지만 메뉴는 등록된 상태.
+          // 사용자에게 레시피만 실패했음을 알리거나, 여기서 추가 처리를 할 수 있습니다.
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: "메뉴는 등록되었으나, AI 레시피 생성에 실패했습니다.",
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      } else {
+        // 성공적으로 생성된 메뉴의 정보를 사용하여 레시피를 등록합니다.
+        const { error: recipeError } = await supabase.from("recipes").insert({
+          name: newMenu.name, // 메뉴 이름과 동일하게 설정
+          steps: [], // 자바스크립트의 빈 배열은 Supabase가 '{}'::text[]로 처리합니다.
+          menu_id: newMenu.id, // 위에서 반환받은 새 메뉴의 ID
+          cafe_id: newMenu.cafe_id,
+        });
+
+        // 레시피 등록 중 에러 처리
+        if (recipeError) {
+          // 참고: 여기서는 메뉴는 생성되었지만 레시피 생성은 실패한 상태입니다.
+          // 필요하다면 이미 생성된 메뉴를 삭제하는 등의 추가적인 예외 처리를 할 수 있습니다.
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: `레시피 생성 실패: ${recipeError.message}`,
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
       }
 
       // 모든 과정이 성공했을 때의 응답
@@ -741,6 +952,7 @@ export default function MenusPage() {
   const [editProductSelection, setEditProductSelection] = useState<string>("");
   const [oneToDelete, setOneToDelete] = useState<Menu | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [generateImage, setGenerateImage] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const deleteFormRef = useRef<HTMLFormElement>(null);
@@ -805,6 +1017,7 @@ export default function MenusPage() {
     setSelectedMenu(null);
     setImagePreview(null);
     setIsNewDialogOpen(true);
+    setGenerateImage(false);
   };
 
   // 메뉴 수정
@@ -885,6 +1098,7 @@ export default function MenusPage() {
       setIsAlertOpen(false);
       setImagePreview(null);
       setIsRemoveImage(false);
+      setGenerateImage(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -1128,6 +1342,7 @@ export default function MenusPage() {
                     placeholder="메뉴 이미지"
                     accept="image/png, image/jpg, image/jpeg"
                     ref={fileInputRef}
+                    disabled={generateImage}
                     onChange={handleFileChange}
                     className={cn(
                       "block w-full border-0 p-0 file:bg-green-600 file:text-white file:px-4 file:rounded-md file:border-0 hover:file:bg-green-700 file:cursor-pointer",
@@ -1154,7 +1369,14 @@ export default function MenusPage() {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">AI 옵션</Label>
                 <div className="col-start-2 col-span-3 flex items-center space-x-2">
-                  <Checkbox id="generate-image" name="generateImage" />
+                  <Checkbox
+                    id="generate-image"
+                    name="generateImage"
+                    checked={generateImage}
+                    onCheckedChange={(checked) =>
+                      setGenerateImage(Boolean(checked))
+                    }
+                  />
                   <Label
                     htmlFor="generate-image"
                     className="text-sm font-medium leading-none"

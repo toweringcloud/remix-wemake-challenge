@@ -8,6 +8,7 @@
 # Additional
 .temp
 .env*
+.gcloud
 /app/models/migrations/*
 /app/models/*_real*
 bun.log

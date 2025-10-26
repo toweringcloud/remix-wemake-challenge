@@ -107,6 +107,37 @@ react-email-starter
 └── tsconfig.json
 ```
 
+- install gcloud sdk
+  - https://cloud.google.com/sdk/docs/install
+
+- generate gcloud default credentials
+
+```sh
+$ gcloud auth application-default login
+Welcome! This command will take you through the configuration of gcloud.
+...
+Your browser has been opened to visit:
+    https://accounts.google.com/o/oauth2/auth?...
+
+Credentials saved to file: [C:\Users\{uid}\AppData\Roaming\gcloud\application_default_credentials.json]
+
+These credentials will be used by any library that requests Application Default Credentials (ADC).
+
+Quota project '{your_project_id}' was added to ADC which can be used by Google client libraries for billing and quota. Note that some services may still bill the project owning the resource.
+...
+
+$ cat /c/Users/{uid}/AppData/Roaming/gcloud/application_default_credentials.json
+{
+  "account": "?",
+  "client_id": "?.apps.googleusercontent.com",
+  "client_secret": "?",
+  "quota_project_id": "?",
+  "refresh_token": "?",
+  "type": "authorized_user",
+  "universe_domain": "googleapis.com"
+}
+```
+
 ### launch
 
 - run bun app with development mode
@@ -136,6 +167,11 @@ $ fly secret
 $ fly deploy
 ```
 
+### test
+
+- download sample video file
+  - [Pexcel](https://www.pexels.com)
+
 - run tunnel client
 
 ```sh
@@ -155,8 +191,3 @@ $ cloudflared tunnel --url http://localhost:5173
 2025-09-17T17:21:11Z INF Version 2025.8.1 (Checksum b5d598b00cc3a28cabc5812d9f762819334614bae452db4e7f23eefe7b081556)
 2025-09-17T17:21:11Z INF GOOS: windows, GOVersion: go1.24.2, GoArch: amd64
 ```
-
-### test
-
-- download sample video file
-  - [Pexcel](https://www.pexels.com)

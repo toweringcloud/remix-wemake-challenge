@@ -1,0 +1,130 @@
+[dotenv@17.2.3] injecting env (20) from .env -- tip: �️  run anywhere with `dotenvx run -- yourcommand`
+Fetching available models...
+
+--- Models supporting 'generateContent' ---
+Could not retrieve models list correctly. Response: Pager {
+  pageInternal: [
+    {
+      name: 'models/gemini-2.5-flash',
+      displayName: 'Gemini 2.5 Flash',
+      description: 'Stable version of Gemini 2.5 Flash, our mid-size multimodal model that supports up to 1 milli
+on tokens, released in June of 2025.',
+      version: '001',
+      tunedModelInfo: {},
+      inputTokenLimit: 1048576,
+      outputTokenLimit: 65536,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/gemini-2.5-pro',
+      displayName: 'Gemini 2.5 Pro',
+      description: 'Stable release (June 17th, 2025) of Gemini 2.5 Pro',
+      version: '2.5',
+      tunedModelInfo: {},
+      inputTokenLimit: 1048576,
+      outputTokenLimit: 65536,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/gemini-2.0-flash',
+      displayName: 'Gemini 2.0 Flash',
+      description: 'Gemini 2.0 Flash',
+      version: '2.0',
+      tunedModelInfo: {},
+      inputTokenLimit: 1048576,
+      outputTokenLimit: 8192,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/gemini-2.0-flash-001',
+      displayName: 'Gemini 2.0 Flash 001',
+      description: 'Stable version of Gemini 2.0 Flash, our fast and versatile multimodal model for scaling acros
+s diverse tasks, released in January of 2025.',
+      version: '2.0',
+      tunedModelInfo: {},
+      inputTokenLimit: 1048576,
+      outputTokenLimit: 8192,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/gemini-2.0-flash-lite-001',
+      displayName: 'Gemini 2.0 Flash-Lite 001',
+      description: 'Stable version of Gemini 2.0 Flash-Lite',
+      version: '2.0',
+      tunedModelInfo: {},
+      inputTokenLimit: 1048576,
+      outputTokenLimit: 8192,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/gemini-2.0-flash-lite',
+      displayName: 'Gemini 2.0 Flash-Lite',
+      description: 'Gemini 2.0 Flash-Lite',
+      version: '2.0',
+      tunedModelInfo: {},
+      inputTokenLimit: 1048576,
+      outputTokenLimit: 8192,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/gemini-2.0-flash-preview-image-generation',
+      displayName: 'Gemini 2.0 Flash Preview Image Generation',
+      description: 'Gemini 2.0 Flash Preview Image Generation',
+      version: '2.0',
+      tunedModelInfo: {},
+      inputTokenLimit: 32768,
+      outputTokenLimit: 8192,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/gemini-2.5-flash-lite',
+      displayName: 'Gemini 2.5 Flash-Lite',
+      description: 'Stable version of Gemini 2.5 Flash-Lite, released in July of 2025',
+      version: '001',
+      tunedModelInfo: {},
+      inputTokenLimit: 1048576,
+      outputTokenLimit: 65536,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/embedding-001',
+      displayName: 'Embedding 001',
+      description: 'Obtain a distributed representation of a text.',
+      version: '001',
+      tunedModelInfo: {},
+      inputTokenLimit: 2048,
+      outputTokenLimit: 1,
+      supportedActions: [Array]
+    },
+    {
+      name: 'models/text-embedding-004',
+      displayName: 'Text Embedding 004',
+      description: 'Obtain a distributed representation of a text.',
+      version: '004',
+      tunedModelInfo: {},
+      inputTokenLimit: 2048,
+      outputTokenLimit: 1,
+      supportedActions: [Array]
+    }
+  ],
+  paramsInternal: { config: { queryBase: true, pageToken: undefined } },
+  requestInternal: [Function (anonymous)],
+  nameInternal: 'models',
+  sdkHttpResponseInternal: {
+    headers: {
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      'content-encoding': 'gzip',
+      'content-type': 'application/json; charset=UTF-8',
+      date: 'Sun, 26 Oct 2025 07:39:25 GMT',
+      server: 'scaffolding on HTTPServer2',
+      'server-timing': 'gfet4t7; dur=50',
+      'transfer-encoding': 'chunked',
+      vary: 'Origin, X-Origin, Referer',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'SAMEORIGIN',
+      'x-xss-protection': '0'
+    }
+  },
+  idxInternal: 0,
+  pageInternalSize: 10
+}

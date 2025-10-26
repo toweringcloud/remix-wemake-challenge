@@ -42,7 +42,7 @@ export const loader: LoaderFunction = async ({
     .select(
       `
       *,
-      menus(id, description, image_url, image_thumb_url),
+      menus(id, name, description, image_url, image_thumb_url),
       recipe_ingredients (
         quantity,
         ingredients (
@@ -61,7 +61,7 @@ export const loader: LoaderFunction = async ({
 
   const recipe: Recipe = {
     id: data.menus.id,
-    name: data.name,
+    name: data.menus.name,
     description: data.menus.description,
     ingredients: data.recipe_ingredients.map((i: any) => ({
       name: i.ingredients.name,

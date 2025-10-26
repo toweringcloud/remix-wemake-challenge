@@ -1,7 +1,6 @@
 import { Tag } from "lucide-react";
 import { useFetcher } from "react-router-dom";
 
-import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,12 +37,9 @@ export function MenuStatusChanger({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        {/* ✅ 1. className에 cn 함수를 사용하여 동적 스타일을 적용합니다. */}
         <button
-          // variant="ghost"
           className={cn(
             "cursor-pointer flex items-center gap-1 text-sm p-1.5 rounded-md transition-colors whitespace-nowrap",
-            // ✅ 2. 상태에 따른 조건부 클래스
             optimisticStatus === "ON_SALE"
               ? "text-green-600 hover:bg-green-500 hover:text-white"
               : "text-stone-600 hover:bg-stone-500 hover:text-white"
@@ -54,7 +50,6 @@ export function MenuStatusChanger({
           {STATUS_OPTIONS[optimisticStatus] || "상태 변경"}
         </button>
       </DropdownMenuTrigger>
-
       <DropdownMenuContent
         align="end"
         className="bg-white shadow-md border border-stone-200 rounded-md"
@@ -63,7 +58,7 @@ export function MenuStatusChanger({
           <DropdownMenuItem
             key={value}
             disabled={isSubmitting}
-            // ✅ 2. 메뉴 아이템 선택 시 fetcher.submit 호출
+            // ✅ 메뉴 아이템 선택 시 fetcher.submit 호출
             onSelect={() => {
               if (value !== currentStatus) {
                 fetcher.submit(

@@ -102,5 +102,40 @@ export async function createThumbnail(
   return processImage(imageFile, thumbnailOptions);
 }
 
+/**
+ * 썸네일 이미지 처리를 위한 플러스 함수
+ * @param imageFile File 객체
+ * @returns 처리된 썸네일 이미지의 Buffer와 해당 이미지의 MIME 타입
+ */
+export async function createThumbnailPlus(
+  imageFile: File | Buffer | ArrayBuffer | Uint8Array
+): Promise<{ buffer: Buffer; mimeType: string }> {
+  const thumbnailOptions: ProcessImageOptions = {
+    width: 256,
+    height: 256,
+    fit: "cover",
+    format: "webp", // 웹에 최적화된 webp 포맷 권장
+    quality: 80,
+  };
+
+  // Normalize various input types to a Buffer so processImage can handle it
+  let inputBuffer: Buffer;
+  if (Buffer.isBuffer(imageFile)) {
+    inputBuffer = imageFile;
+  } else if (imageFile instanceof ArrayBuffer) {
+    inputBuffer = Buffer.from(new Uint8Array(imageFile));
+  } else if (imageFile instanceof Uint8Array) {
+    inputBuffer = Buffer.from(imageFile);
+  } else if (typeof (imageFile as File)?.arrayBuffer === "function") {
+    // File-like: read as ArrayBuffer and convert
+    const ab = await (imageFile as File).arrayBuffer();
+    inputBuffer = Buffer.from(new Uint8Array(ab));
+  } else {
+    throw new Error("Unsupported image input type for createThumbnail");
+  }
+
+  return processImage(inputBuffer, thumbnailOptions);
+}
+
 // 필요하다면 다른 이미지 처리 함수 추가 가능
 // 예: createWatermark, optimizeImageForWeb 등
