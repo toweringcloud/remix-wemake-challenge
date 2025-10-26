@@ -11,6 +11,7 @@ import {
   uuid,
   varchar,
   pgPolicy,
+  bigserial,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -112,7 +113,6 @@ export const products = pgTable(
     // const currentUserCafeId = sql`(SELECT cafe_id FROM public.users WHERE id = auth.uid())`;
     // 현재 로그인한 사용자가 매니저인지 확인하는 헬퍼 SQL
     // const isManager = sql`(SELECT role FROM public.users WHERE id = auth.uid()) = 'MA'`;
-
     return [
       {
         cafeProductNameUnique: unique("cafe_product_name_unique_idx").on(
@@ -148,24 +148,37 @@ export const menuStatusEnum = pgEnum("menu_status", [
   "OUT_OF_STOCK", // 품절 (당분간 재고 없음)
   "HOLD", // 일시 중지 (계절성 메뉴 등의 기타 사유)
 ]);
-export const menus = pgTable("menus", {
-  id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar("name", { length: 64 }).notNull(),
-  description: text("description"),
-  isHot: boolean("is_hot"), // Hot or Ice 여부
-  price: integer("price").notNull().default(0), // 가격
-  status: menuStatusEnum("status").notNull().default("BEFORE_OPEN"),
-  image: text("image_url"),
-  imageThumb: text("image_thumb_url"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  productId: bigint("product_id", { mode: "number" })
-    .notNull()
-    .references(() => products.id),
-  cafeId: uuid("cafe_id")
-    .notNull()
-    .references(() => cafes.id),
-});
+export const menus = pgTable(
+  "menus",
+  {
+    id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar("name", { length: 64 }).notNull(),
+    description: text("description"),
+    isHot: boolean("is_hot"), // Hot or Ice 여부
+    price: integer("price").notNull().default(0), // 가격
+    status: menuStatusEnum("status").notNull().default("BEFORE_OPEN"),
+    image: text("image_url"),
+    imageThumb: text("image_thumb_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+    productId: bigint("product_id", { mode: "number" })
+      .notNull()
+      .references(() => products.id),
+    cafeId: uuid("cafe_id")
+      .notNull()
+      .references(() => cafes.id),
+  },
+  (table) => {
+    return [
+      {
+        cafeMenuNameUnique: unique("cafe_menu_name_unique_idx").on(
+          table.cafeId,
+          table.name
+        ),
+      },
+    ];
+  }
+);
 
 // 🍳 Recipe (레시피)
 export const recipes = pgTable("recipes", {
@@ -185,16 +198,29 @@ export const recipes = pgTable("recipes", {
 });
 
 // 🥕 Ingredient (재료)
-export const ingredients = pgTable("ingredients", {
-  id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar("name", { length: 64 }).notNull(),
-  image: text("image_url"),
-  imageThumb: text("image_thumb_url"),
-  itemId: bigint("item_id", { mode: "number" }).references(() => items.id),
-  cafeId: uuid("cafe_id")
-    .notNull()
-    .references(() => cafes.id),
-});
+export const ingredients = pgTable(
+  "ingredients",
+  {
+    id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar("name", { length: 64 }).notNull(),
+    image: text("image_url"),
+    imageThumb: text("image_thumb_url"),
+    itemId: bigint("item_id", { mode: "number" }).references(() => items.id),
+    cafeId: uuid("cafe_id")
+      .notNull()
+      .references(() => cafes.id),
+  },
+  (table) => {
+    return [
+      {
+        cafeIngredientNameUnique: unique("cafe_ingredient_name_unique_idx").on(
+          table.cafeId,
+          table.name
+        ),
+      },
+    ];
+  }
+);
 
 // ✅ Recipe + Ingredient (N:M 관계)
 export const recipeIngredients = pgTable(

@@ -49,13 +49,13 @@ No config path provided, using default 'drizzle.config.ts'
 Reading config file 'D:\work\templates\remix-wemake-challenge\drizzle.config.ts'
 9 tables
 cafes 10 columns 0 indexes 0 fks
-ingredients 4 columns 0 indexes 1 fks
-items 9 columns 0 indexes 2 fks
-menus 11 columns 0 indexes 2 fks
-products 4 columns 0 indexes 1 fks
+ingredients 6 columns 0 indexes 2 fks
+items 18 columns 0 indexes 2 fks
+menus 12 columns 0 indexes 2 fks
+products 8 columns 0 indexes 1 fks
 recipe_ingredients 3 columns 0 indexes 2 fks
 recipes 8 columns 0 indexes 2 fks
-stocks 4 columns 0 indexes 1 fks
+stocks 8 columns 0 indexes 1 fks
 users 8 columns 0 indexes 1 fks
 
 [✓] Your SQL migration file ➜ app\models\migrations\0000_thin_sleepwalker.sql 🚀
@@ -70,6 +70,13 @@ No config path provided, using default 'drizzle.config.ts'
 Reading config file '{workspace}\remix-wemake-challenge\drizzle.config.ts'
 Using 'pg' driver for database querying
 [✓] migrations applied successfully!
+```
+
+- generate db types
+
+```sh
+$ bun run db:typegen
+$ bun x supabase gen types typescript --project-id mkhmxtzdvkpqqdmjqnmb > ./app/types/database.types.ts
 ```
 
 - add shadcn/ui components

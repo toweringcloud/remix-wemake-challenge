@@ -291,7 +291,12 @@ export const action: ActionFunction = async ({
           const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/imagegeneration@005:predict`;
 
           // Cafe 메뉴 이미지를 생성하기 위한 커스텀 프롬프트
-          const prompt = `A professional, clean, high-resolution photograph of a cafe drink or desert named '${temperature} ${name}'. Description: '${description || name}'. The drink is presented beautifully on a minimalist wooden cafe table, with soft, natural lighting. photorealistic, 4k.`;
+          const imagePrompt = `
+            A professional, clean, high-resolution photograph of a cafe drink or desert 
+            named '${name}' with ${temperature}. Description: '${description || name}'. 
+            The drink is presented beautifully on a minimalist wooden cafe table, 
+            with soft, natural lighting. photorealistic, 4k.
+          `;
 
           console.log("Generating image with Imagen API using OAuth ...");
           const apiResponse = await fetch(endpoint, {
@@ -301,7 +306,7 @@ export const action: ActionFunction = async ({
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              instances: [{ prompt: prompt }],
+              instances: [{ prompt: imagePrompt }],
               parameters: { sampleCount: 1 },
             }),
           });
@@ -463,13 +468,13 @@ export const action: ActionFunction = async ({
       // +++ AI 레시피 생성 및 등록 (옵션 선택 시) +++
       if (generateRecipe) {
         try {
-          // AI 서비스 정의
+          // text2text 모델의 AI 서비스 정의
           const genAI = new GoogleGenAI({
             apiKey: process.env.GOOGLE_API_KEY!,
             apiVersion: "v1",
           });
 
-          // AI 프롬프트 정의
+          // Cafe 메뉴 레시피를 생성하기 위한 커스텀 프롬프트
           const recipePrompt = `
             Create a simple cafe recipe for a drink named '${name}'.
             Please provide the response ONLY in JSON format with two keys: "ingredients" (an array of strings) and "steps" (an array of strings).
@@ -527,9 +532,13 @@ export const action: ActionFunction = async ({
             // ingredients 테이블에 재료 upsert
             const { data: ingData, error: upsertIngError } = await supabase
               .from("ingredients")
-              .upsert({ name: ing.name.trim(), cafe_id: cafeId })
+              .upsert(
+                { name: ing.name.trim(), cafe_id: cafeId },
+                { onConflict: "cafe_id, name" } // DB에 설정한 UNIQUE 제약 조건 컬럼들
+              )
               .select("id")
               .single();
+            console.log("ingredient", newRecipe.menu_id, ingData, ing.amount);
 
             if (upsertIngError) {
               return new Response(
@@ -715,10 +724,7 @@ export const action: ActionFunction = async ({
               ok: false,
               errors: { image: ["새 이미지 업로드 실패"] },
             }),
-            {
-              status: 500,
-              headers: { "Content-Type": "application/json" },
-            }
+            { status: 500, headers: { "Content-Type": "application/json" } }
           );
         }
         updateData.image_url =

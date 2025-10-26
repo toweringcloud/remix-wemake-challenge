@@ -7,14 +7,14 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "check:gemini": "check-gemini",
+    "check:gemini": "node check-gemini.js",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:typegen": "npx supabase gen types typescript --project-id mkhmxtzdvkpqqdmjqnmb > ./app/types/database.types.ts",
+    "db:typegen": "bun x supabase gen types typescript --project-id mkhmxtzdvkpqqdmjqnmb > ./app/types/database.types.ts",
     "deploy:cf": "bun run build && wrangler pages deploy",
     "deploy:fi": "fly deploy --dockerfile Dockerfile"
   },
