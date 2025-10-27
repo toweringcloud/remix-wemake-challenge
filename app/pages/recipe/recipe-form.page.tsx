@@ -1,23 +1,24 @@
 import { ChevronLeft, Loader, Save, Trash2, XCircle } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import {
-  useParams,
-  useNavigate,
-  Form,
-  type LoaderFunctionArgs,
-  type LoaderFunction,
-  useLoaderData,
-  redirect,
-  useNavigation,
-  Link,
   type ActionFunctionArgs,
   type ActionFunction,
+  type LoaderFunctionArgs,
+  type LoaderFunction,
+  Form,
+  Link,
+  redirect,
   useActionData,
+  useLoaderData,
+  useNavigate,
+  useNavigation,
+  useParams,
 } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 
 import type { Route } from "./+types/recipe-form.page";
 import { getCookieSession } from "~/lib/cookie.server";
@@ -68,7 +69,7 @@ export const loader: LoaderFunction = async ({
     .select(
       `
       *,
-      menus(id, description, image_url),
+      menus(id, description, image_url, image_thumb_url),
       recipe_ingredients (
         quantity,
         ingredients (
@@ -96,6 +97,7 @@ export const loader: LoaderFunction = async ({
     })),
     steps: data.steps,
     imageUrl: data.menus.image_url,
+    imageThumbUrl: data.menus.image_thumb_url,
     videoUrl: data.video,
     updatedAt: data.updated_at,
   };
@@ -193,7 +195,10 @@ export const action: ActionFunction = async ({
       // 4-1. ingredients 테이블에 재료 upsert
       const { data: ingData, error: upsertIngError } = await supabase
         .from("ingredients")
-        .upsert({ name: ing.name.trim(), cafe_id: cafeId })
+        .upsert(
+          { name: ing.name.trim(), cafe_id: cafeId },
+          { onConflict: "cafe_id, name" } // DB에 설정한 UNIQUE 제약 조건 컬럼들
+        )
         .select("id")
         .single();
 
@@ -262,7 +267,7 @@ export default function RecipeFormPage() {
   const navigate = useNavigate();
 
   // 레시피 상세 조회 (recipeId가 있으면 수정 모드, 없으면 생성 모드)
-  const { recipe } = useLoaderData<any>(); // 타입을 any로 잠시 변경
+  const { recipe } = useLoaderData<Recipe>();
   const actionData = useActionData<{
     ok: boolean;
     message?: string;
@@ -276,6 +281,7 @@ export default function RecipeFormPage() {
   const [description, setDescription] = useState<string>("");
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [steps, setSteps] = useState<string[]>([""]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // 폼 제출이 완료되었는지 확인
   const isSubmitting = navigation.state === "submitting";
@@ -398,11 +404,33 @@ export default function RecipeFormPage() {
         />
 
         {/* 레시피 이름, 설명 */}
-        <div>
-          <label htmlFor="description" className="block text-lg font-bold mb-2">
-            메뉴 설명
-          </label>
-          <span className="text-sm text-gray-800">{description}</span>
+        <div className="flex items-start justify-between">
+          {/* Left side: Description */}
+          <div className="grow pr-4">
+            {/* Add padding to the right */}
+            <label
+              htmlFor="description"
+              className="block text-lg font-bold mb-2"
+            >
+              메뉴 설명
+            </label>
+            <span className="text-sm text-gray-800">{description}</span>
+          </div>
+
+          {/* Right side: Thumbnail Image */}
+          {recipe.imageThumbUrl && (
+            <div
+              className="w-24 h-24 shrink-0"
+              onClick={() => setIsModalOpen(true)}
+            >
+              {/* Fixed size for thumbnail */}
+              <img
+                src={recipe.imageThumbUrl}
+                alt={name}
+                className="w-full h-full object-cover rounded-md border-0"
+              />
+            </div>
+          )}
         </div>
 
         {/* 재료 관리 */}
@@ -508,6 +536,24 @@ export default function RecipeFormPage() {
           </Button>
         </div>
       </Form>
+
+      {/* --- Image Modal --- */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent
+          className="max-w-xl p-0 border-0"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          {/* Adjust max-w-* as needed */}
+          {recipe.imageUrl && (
+            <img
+              src={recipe.imageUrl}
+              alt={name}
+              className="w-full h-auto object-contain cursor-pointer rounded-lg shadow-xl"
+              onClick={() => setIsModalOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1379,7 +1379,7 @@ export default function MenusPage() {
                     id="generate-image"
                     name="generateImage"
                     checked={generateImage}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean | "indeterminate") =>
                       setGenerateImage(Boolean(checked))
                     }
                   />

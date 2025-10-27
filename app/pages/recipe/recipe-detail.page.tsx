@@ -153,7 +153,7 @@ export default function RecipeDetailPage() {
         {/* ✅ 이미지 섹션 (좌측 40%) */}
         <div
           // ✅ 모바일(기본)에서는 aspect-square, md 이상에서는 aspect-auto로 변경
-          className="md:w-2/5 flex-shrink-0 flex items-center justify-center bg-stone-50 rounded-lg overflow-hidden border border-amber-100 
+          className="md:w-2/5 shrink-0 flex items-center justify-center bg-stone-50 rounded-lg overflow-hidden border border-amber-100 
                      aspect-square md:aspect-auto w-full"
         >
           {showFallback ? (
@@ -169,7 +169,7 @@ export default function RecipeDetailPage() {
         </div>
 
         {/* ✅ 데이터 섹션 (우측 60%) */}
-        <div className="md:w-3/5 flex-grow space-y-6">
+        <div className="md:w-3/5 grow space-y-6">
           <p className="text-lg text-stone-600">{recipe.description}</p>
           {/* 재료 섹션 */}
           <div className="mb-8">
